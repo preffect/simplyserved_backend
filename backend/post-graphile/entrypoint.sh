@@ -6,7 +6,7 @@ set -e
 
 # Start PostGraphile in watch mode
 exec postgraphile \
-  --connection "$DATABASE_URL" \
+  --connection "$DATABASE_APP_URL" \
   --port 5000 \
   --schema public \
   --watch \

@@ -1,0 +1,22 @@
+{
+  "connectionString": "postgres://${DATABASE_MIGRATE_USER}:${DATABASE_MIGRATE_PASSWORD}@postgres:5432/${POSTGRES_DB}",
+  "shadowConnectionString": "postgres://${DATABASE_MIGRATE_USER}:${DATABASE_MIGRATE_PASSWORD}@postgres:5432/${POSTGRES_DB}_shadow",
+  "rootConnectionString": "postgres://${DATABASE_MIGRATE_USER}:${DATABASE_MIGRATE_PASSWORD}@postgres:5432/postgres",
+  "pgSettings": {
+    "search_path": "public"
+  },
+  "placeholders": {
+    ":DATABASE_OWNER": "${DATABASE_OWNER}"
+  },
+  "afterReset": [
+    "afterReset.sql"
+  ],
+  "afterAllMigrations": [
+    "afterAllMigrations.sql"
+  ],
+  "afterCurrent": [
+    "afterCurrent.sql"
+  ],
+  "blankMigrationContent": "-- Write your migration here\n",
+  "migrationsFolder": "./migrations"
+}

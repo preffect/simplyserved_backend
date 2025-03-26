@@ -13,4 +13,6 @@ RUN chmod +x /app/wait-for-postgres.sh
 COPY ./entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
+COPY ./.gmrc /.gmrc
+
 ENTRYPOINT ["/app/entrypoint.sh"]

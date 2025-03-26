@@ -36,6 +36,17 @@ if ! docker ps | grep -q postgres; then
     echo "PostgreSQL is ready!"
 fi
 
+# Check if user already exists
+USER_EXISTS=$(docker compose exec postgres psql -U postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USERNAME'")
+
+if [ "$USER_EXISTS" = "1" ]; then
+    echo "User $USERNAME already exists. Dropping user and recreating..."
+    # Drop all privileges and then drop the user
+    docker compose exec postgres psql -U postgres -c "REVOKE ALL PRIVILEGES ON DATABASE simplyserved FROM $USERNAME;"
+    docker compose exec postgres psql -U postgres -c "ALTER USER $USERNAME NOSUPERUSER;"
+    docker compose exec postgres psql -U postgres -c "DROP USER $USERNAME;"
+fi
+
 # Create SQL command based on migrations flag
 if [ "$MIGRATIONS" = true ]; then
     SQL_COMMAND="CREATE USER $USERNAME WITH PASSWORD '$PASSWORD' SUPERUSER;"

@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# Check if services are already running
-if docker ps | grep -q "simplyserved"; then
-    echo "Services are already running. Stopping them first..."
-    docker compose down
-    echo "Services stopped."
-fi
 
 # Function to check if build is needed
 need_rebuild() {
@@ -27,6 +21,8 @@ need_rebuild() {
     
     return 1
 }
+
+docker compose down
 
 # Check if any services need to be rebuilt
 REBUILD=""
@@ -51,7 +47,7 @@ fi
 
 # Start all services
 echo "Starting all services..."
-docker compose up -d
+docker compose up
 
 echo "All services are running!"
 echo "PostgreSQL: localhost:5432"

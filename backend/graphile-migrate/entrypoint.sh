@@ -16,7 +16,7 @@ if [ -d "/app/migrations" ]; then
     graphile-migrate init
     
     # Copy the initialization files to the actual migrations directory
-    cp -r ./* /app/migrations/
+    cp -r ./migrations/* /app/migrations/
     cp .gmrc /app/
     
     echo "Initialization files copied to /app/migrations"

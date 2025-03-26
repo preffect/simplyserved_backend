@@ -5,7 +5,9 @@ set -e
 /app/wait-for-postgres.sh
 
 # Construct the connection string using environment variables
-DATABASE_APP_URL="postgres://${DATABASE_APP_USER}:${DATABASE_APP_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+DATABASE_APP_URL="postgres://${DATABASE_MIGRATE_USER}:${DATABASE_MIGRATE_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+
+echo "Starting PostGraphile in watch mode..."
 
 # Start PostGraphile in watch mode
 exec postgraphile \

@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Check if services are already running
+if docker ps | grep -q "simplyserved"; then
+    echo "Services are already running. Stopping them first..."
+    docker compose down
+    echo "Services stopped."
+fi
+
 # Function to check if build is needed
 need_rebuild() {
     local service=$1

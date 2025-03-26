@@ -4,10 +4,12 @@ set -e
 # Wait for PostgreSQL to be ready
 /app/wait-for-postgres.sh
 
-# Initialize graphile-migrate if not already initialized
-if [ ! -f /app/migrations/current.sql ]; then
-  echo "Initializing graphile-migrate..."
+# Check if migrations directory is empty (except for hidden files)
+if [ ! "$(ls -A /app/migrations 2>/dev/null | grep -v '^\.')" ]; then
+  echo "Migrations directory is empty, initializing graphile-migrate..."
   graphile-migrate init
+else
+  echo "Migrations directory already exists, skipping initialization..."
 fi
 
 # Keep container running

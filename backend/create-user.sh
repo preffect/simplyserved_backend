@@ -48,12 +48,28 @@ echo "Creating user $USERNAME..."
 docker compose exec postgres psql -U postgres -d simplyserved -c "$SQL_COMMAND"
 
 # Update .env file with new user credentials
-if grep -q "^DATABASE_URL=" ./backend/.env; then
-    # Replace existing DATABASE_URL
-    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgres://$USERNAME:$PASSWORD@postgres:5432/simplyserved|" ./backend/.env
+if [ "$MIGRATIONS" = true ]; then
+    if grep -q "^DATABASE_MIGRATE_USER=" ./.env; then
+        sed -i "s|^DATABASE_MIGRATE_USER=$USERNAME|" ./.env
+    else
+        echo "DATABASE_MIGRATE_USER=$USERNAME" >> ./.env
+    fi
+    if grep -q "^DATABASE_MIGRATE_PASSWORD=" ./.env; then
+        sed -i "s|^DATABASE_MIGRATE_PASSWORD=$PASSWORD|" ./.env
+    else
+        echo "DATABASE_MIGRATE_PASSWORD=$PASSWORD" >> ./.env
+    fi
 else
-    # Add new DATABASE_URL
-    echo "DATABASE_URL=postgres://$USERNAME:$PASSWORD@postgres:5432/simplyserved" >> ./backend/.env
+    if grep -q "^DATABASE_APP_USER=" ./.env; then
+        sed -i "s|^DATABASE_APP_USER=$USERNAME|" ./.env
+    else
+        echo "DATABASE_APP_USER=$USERNAME" >> ./.env
+    fi
+    if grep -q "^DATABASE_APP_PASSWORD=" ./.env; then
+        sed -i "s|^DATABASE_APP_PASSWORD=$PASSWORD|" ./.env
+    else
+        echo "DATABASE_APP_PASSWORD=$PASSWORD" >> ./.env
+    fi
 fi
 
 echo "User $USERNAME created successfully and .env file updated."

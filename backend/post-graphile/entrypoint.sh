@@ -12,6 +12,7 @@ echo "Starting PostGraphile in watch mode..."
 # Start PostGraphile in watch mode
 exec postgraphile \
   --connection "$DATABASE_APP_URL" \
+  --host 0.0.0.0 \
   --port 5000 \
   --schema public \
   --watch \

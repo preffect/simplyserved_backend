@@ -36,12 +36,12 @@ case "$1" in
   apply)
     ensure_migrations_dir
     echo -e "${YELLOW}Applying pending migrations...${NC}"
-    docker-compose run --rm db-migrator apply
+    docker compose run --rm db-migrator apply
     ;;
   status)
     ensure_migrations_dir
     echo -e "${YELLOW}Checking migration status...${NC}"
-    docker-compose run --rm db-migrator status
+    docker compose run --rm db-migrator status
     ;;
   create)
     if [ -z "$2" ]; then
@@ -51,17 +51,17 @@ case "$1" in
     fi
     ensure_migrations_dir
     echo -e "${YELLOW}Creating new migration: $2${NC}"
-    docker-compose run --rm db-migrator create "$2"
+    docker compose run --rm db-migrator create "$2"
     ;;
   test)
     ensure_migrations_dir
     echo -e "${YELLOW}Testing migrations in sandbox...${NC}"
-    docker-compose run --rm db-migrator test
+    docker compose run --rm db-migrator test
     ;;
   rebuild-sandbox)
     ensure_migrations_dir
     echo -e "${YELLOW}Rebuilding sandbox database...${NC}"
-    docker-compose run --rm db-migrator rebuild-sandbox
+    docker compose run --rm db-migrator rebuild-sandbox
     ;;
   help|"")
     usage

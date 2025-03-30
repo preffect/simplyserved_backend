@@ -31,10 +31,6 @@ if need_rebuild "backend_postgres" "./backend/database/Dockerfile"; then
     REBUILD="$REBUILD postgres"
 fi
 
-if need_rebuild "backend_graphile-migrate" "./backend/graphile-migrate/Dockerfile"; then
-    REBUILD="$REBUILD graphile-migrate"
-fi
-
 if need_rebuild "backend_postgraphile" "./backend/post-graphile/Dockerfile"; then
     REBUILD="$REBUILD postgraphile"
 fi

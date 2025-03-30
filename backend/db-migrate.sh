@@ -31,6 +31,32 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Check if db-migrator needs to be rebuilt
+REBUILD_NEEDED=false
+LAST_BUILD_FILE=".db_migrator_last_build"
+
+# Create the file if it doesn't exist
+if [ ! -f "$LAST_BUILD_FILE" ]; then
+    touch "$LAST_BUILD_FILE"
+    REBUILD_NEEDED=true
+fi
+
+# Check if any files in the db-migrator directory have changed since last build
+LAST_BUILD_TIME=$(stat -c %Y "$LAST_BUILD_FILE" 2>/dev/null || echo 0)
+LATEST_CHANGE=$(find ./backend/db-migrator -type f -exec stat -c %Y {} \; | sort -nr | head -n 1)
+
+if [ "$LATEST_CHANGE" -gt "$LAST_BUILD_TIME" ]; then
+    echo -e "${INFO} Changes detected in db-migrator files. Rebuilding container..."
+    REBUILD_NEEDED=true
+fi
+
+# Rebuild if needed
+if [ "$REBUILD_NEEDED" = true ]; then
+    echo -e "${INFO} Building db-migrator container..."
+    docker compose build db-migrator
+    touch "$LAST_BUILD_FILE"
+fi
+
 # Ensure the postgres service is running
 echo -e "${INFO} Ensuring postgres service is available..."
 if ! docker compose ps postgres | grep -q "Up"; then

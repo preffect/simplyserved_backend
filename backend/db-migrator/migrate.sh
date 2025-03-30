@@ -282,6 +282,22 @@ apply_migrations() {
   for migration in $available_migrations; do
     if ! echo "$applied_migrations" | grep -q "^$migration$"; then
       echo "Testing migration in sandbox: $migration"
+      
+      # Verify we can extract the migrations before attempting to apply
+      extract_up_migration "$migration" > /dev/null
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to extract UP migration for $migration"
+        failed=true
+        break
+      fi
+      
+      extract_down_migration "$migration" > /dev/null
+      if [ $? -ne 0 ]; then
+        echo "Error: Failed to extract DOWN migration for $migration"
+        failed=true
+        break
+      fi
+      
       if apply_migration "$migration" "$SANDBOX_DB_NAME"; then
         echo "Sandbox test successful for $migration"
       else
@@ -335,6 +351,30 @@ test_migrations() {
   for migration in $available_migrations; do
     if ! echo "$applied_migrations" | grep -q "^$migration$"; then
       echo "Testing migration: $migration"
+      
+      # Test extraction of up migration
+      extract_up_migration "$migration" > /dev/null
+      local up_extract_status=$?
+      if [ $up_extract_status -ne 0 ]; then
+        echo "❌ UP migration extraction failed for $migration"
+        apply_result="FAIL"
+        rollback_result="SKIPPED"
+        test_results+=("$migration: Extract UP=FAIL, Apply=SKIPPED, Rollback=SKIPPED")
+        pending_count=$((pending_count + 1))
+        continue
+      fi
+      
+      # Test extraction of down migration
+      extract_down_migration "$migration" > /dev/null
+      local down_extract_status=$?
+      if [ $down_extract_status -ne 0 ]; then
+        echo "❌ DOWN migration extraction failed for $migration"
+        apply_result="SKIPPED"
+        rollback_result="FAIL"
+        test_results+=("$migration: Extract UP=PASS, Extract DOWN=FAIL, Apply=SKIPPED, Rollback=SKIPPED")
+        pending_count=$((pending_count + 1))
+        continue
+      fi
       
       # Test apply
       apply_migration "$migration" "$SANDBOX_DB_NAME"
@@ -394,13 +434,32 @@ rebuild_sandbox() {
   fi
   
   local count=0
+  local failed=false
   
   for migration in $available_migrations; do
-    apply_migration "$migration" "$SANDBOX_DB_NAME"
-    count=$((count + 1))
+    # Verify we can extract the migrations before attempting to apply
+    extract_up_migration "$migration" > /dev/null
+    if [ $? -ne 0 ]; then
+      echo "Error: Failed to extract UP migration for $migration"
+      failed=true
+      break
+    fi
+    
+    if apply_migration "$migration" "$SANDBOX_DB_NAME"; then
+      count=$((count + 1))
+    else
+      echo "Error: Failed to apply migration $migration"
+      failed=true
+      break
+    fi
   done
   
-  echo "Sandbox database rebuilt with $count migrations"
+  if [ "$failed" = true ]; then
+    echo "Sandbox rebuild failed."
+    return 1
+  else
+    echo "Sandbox database rebuilt with $count migrations"
+  fi
 }
 
 # Initialize databases

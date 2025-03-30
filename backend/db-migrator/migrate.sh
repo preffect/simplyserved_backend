@@ -59,7 +59,7 @@ apply_migration() {
   
   # Record the migration
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
-    INSERT INTO $MIGRATIONS_TABLE (filename, hash) VALUES ('$filename', '$hash');
+    INSERT INTO $MIGRATIONS_TABLE (filename, hash, date) VALUES ('$filename', '$hash', NOW());
   "
   
   echo "Migration $filename applied successfully to $db"

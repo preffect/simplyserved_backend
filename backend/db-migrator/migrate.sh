@@ -2,7 +2,7 @@
 set -e
 
 MIGRATIONS_DIR="/migrations"
-MIGRATIONS_TABLE="schema_migrations"
+MIGRATIONS_TABLE="${APPLICATION_DB}_migrations"
 DB_HOST="postgres"
 DB_USER="${DATABASE_MIGRATE_USER:-postgres}"
 DB_PASSWORD="${DATABASE_MIGRATE_PASSWORD:-postgres}"
@@ -105,9 +105,10 @@ create_sandbox_db() {
   
   # Check if database exists
   local db_exists=$(PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$SANDBOX_DB_NAME'")
-  
+ 
   # Drop database if it exists (must be done outside of a transaction)
   if [ "$db_exists" = "1" ]; then
+    echo "Sandbox database exists. Droping: $SANDBOX_DB_NAME"
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "DROP DATABASE $SANDBOX_DB_NAME;"
   fi
   

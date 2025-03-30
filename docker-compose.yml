@@ -15,6 +15,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  db-migrator:
+    build:
+      context: ./backend/db-migrator
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/database/migrations:/migrations
+    depends_on:
+      postgres:
+        condition: service_healthy
   postgraphile:
     build:
       context: ./backend/post-graphile

@@ -12,14 +12,17 @@ usage() {
   echo "Usage: $0 COMMAND [ARGS]"
   echo ""
   echo "Commands:"
-  echo "  apply                Apply all pending migrations"
+  echo "  apply                Apply all pending migrations (tests in sandbox first)"
   echo "  status               Show migration status"
   echo "  create NAME          Create a new migration with NAME"
+  echo "  test                 Test migrations in sandbox and report results"
+  echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
   echo "  help                 Show this help message"
   echo ""
   echo "Examples:"
   echo "  $0 status"
   echo "  $0 create add_users_table"
+  echo "  $0 test"
   echo "  $0 apply"
 }
 
@@ -49,6 +52,16 @@ case "$1" in
     ensure_migrations_dir
     echo -e "${YELLOW}Creating new migration: $2${NC}"
     docker-compose run --rm db-migrator create "$2"
+    ;;
+  test)
+    ensure_migrations_dir
+    echo -e "${YELLOW}Testing migrations in sandbox...${NC}"
+    docker-compose run --rm db-migrator test
+    ;;
+  rebuild-sandbox)
+    ensure_migrations_dir
+    echo -e "${YELLOW}Rebuilding sandbox database...${NC}"
+    docker-compose run --rm db-migrator rebuild-sandbox
     ;;
   help|"")
     usage

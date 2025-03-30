@@ -30,9 +30,11 @@ CREATE TABLE users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Down migration (if needed)
--- DROP TABLE users;
+-- Down migration
+DROP TABLE users;
 ```
+
+Note: Always include a proper "Down migration" section that can revert your changes. This is used for testing and rollbacks.
 
 ## Usage
 

@@ -18,6 +18,7 @@ usage() {
   echo "  create NAME          Create a new migration with NAME"
   echo "  test                 Test migrations in sandbox and report results"
   echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
+  echo "  init                 Initialize main and sandbox databases"
   echo "  help                 Show this help message"
   echo ""
   echo "Examples:"
@@ -25,6 +26,7 @@ usage() {
   echo "  $0 create add_users_table"
   echo "  $0 test"
   echo "  $0 apply"
+  echo "  $0 init"
 }
 
 # Ensure the migrations directory exists
@@ -93,6 +95,12 @@ case "$1" in
     check_rebuild_container
     echo -e "${YELLOW}Rebuilding sandbox database...${NC}"
     docker compose run --rm db-migrator rebuild-sandbox
+    ;;
+  init)
+    ensure_migrations_dir
+    check_rebuild_container
+    echo -e "${YELLOW}Initializing databases...${NC}"
+    docker compose run --rm db-migrator init
     ;;
   help|"")
     usage

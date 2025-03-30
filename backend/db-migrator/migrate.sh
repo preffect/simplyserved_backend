@@ -18,9 +18,9 @@ ensure_migrations_table() {
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
     CREATE TABLE IF NOT EXISTS $MIGRATIONS_TABLE (
       id SERIAL PRIMARY KEY,
-      version VARCHAR(255) NOT NULL UNIQUE,
-      name VARCHAR(255) NOT NULL,
-      applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      filename TEXT NOT NULL UNIQUE,
+      hash TEXT NOT NULL,
+      date TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   "
 }
@@ -29,7 +29,7 @@ ensure_migrations_table() {
 get_applied_migrations() {
   local db=$1
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -t -c "
-    SELECT version FROM $MIGRATIONS_TABLE ORDER BY version;
+    SELECT filename FROM $MIGRATIONS_TABLE ORDER BY filename;
   " | tr -d ' '
 }
 
@@ -38,23 +38,31 @@ get_available_migrations() {
   find "$MIGRATIONS_DIR" -name "*.sql" | sort | xargs -I{} basename {} .sql
 }
 
+# Calculate hash of a file
+calculate_hash() {
+  local file=$1
+  md5sum "$file" | awk '{print $1}'
+}
+
 # Apply a migration
 apply_migration() {
-  local version=$1
+  local filename=$1
   local db=$2
-  local name=$(echo $version | cut -d'_' -f2-)
   
-  echo "Applying migration: $version to $db"
+  echo "Applying migration: $filename to $db"
+  
+  # Calculate hash of the migration file
+  local hash=$(calculate_hash "$MIGRATIONS_DIR/$filename.sql")
   
   # Execute the migration
-  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -f "$MIGRATIONS_DIR/$version.sql"
+  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -f "$MIGRATIONS_DIR/$filename.sql"
   
   # Record the migration
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
-    INSERT INTO $MIGRATIONS_TABLE (version, name) VALUES ('$version', '$name');
+    INSERT INTO $MIGRATIONS_TABLE (filename, hash) VALUES ('$filename', '$hash');
   "
   
-  echo "Migration $version applied successfully to $db"
+  echo "Migration $filename applied successfully to $db"
 }
 
 # Extract down migration from a migration file
@@ -75,16 +83,16 @@ extract_down_migration() {
 
 # Rollback a migration
 rollback_migration() {
-  local version=$1
+  local filename=$1
   local db=$2
   
-  echo "Rolling back migration: $version from $db"
+  echo "Rolling back migration: $filename from $db"
   
   # Get the down migration SQL
-  local down_sql=$(extract_down_migration "$version")
+  local down_sql=$(extract_down_migration "$filename")
   
   if [ $? -ne 0 ]; then
-    echo "Error: Could not extract down migration for $version"
+    echo "Error: Could not extract down migration for $filename"
     return 1
   fi
   
@@ -93,10 +101,29 @@ rollback_migration() {
   
   # Remove the migration record
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
-    DELETE FROM $MIGRATIONS_TABLE WHERE version = '$version';
+    DELETE FROM $MIGRATIONS_TABLE WHERE filename = '$filename';
   "
   
-  echo "Migration $version rolled back successfully from $db"
+  echo "Migration $filename rolled back successfully from $db"
+}
+
+# Ensure main database exists
+ensure_main_db() {
+  echo "Ensuring main database exists: $DB_NAME"
+  
+  # Check if database exists
+  local db_exists=$(PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'")
+  
+  # Create the database if it doesn't exist
+  if [ "$db_exists" != "1" ]; then
+    echo "Creating main database: $DB_NAME"
+    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "CREATE DATABASE $DB_NAME;"
+  fi
+  
+  # Create migrations table in main database
+  ensure_migrations_table "$DB_NAME"
+  
+  echo "Main database ready"
 }
 
 # Create or recreate sandbox database
@@ -108,7 +135,7 @@ create_sandbox_db() {
  
   # Drop database if it exists (must be done outside of a transaction)
   if [ "$db_exists" = "1" ]; then
-    echo "Sandbox database exists. Droping: $SANDBOX_DB_NAME"
+    echo "Sandbox database exists. Dropping: $SANDBOX_DB_NAME"
     PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "DROP DATABASE $SANDBOX_DB_NAME;"
   fi
   
@@ -321,6 +348,14 @@ rebuild_sandbox() {
   echo "Sandbox database rebuilt with $count migrations"
 }
 
+# Initialize databases
+init_databases() {
+  echo "Initializing databases..."
+  ensure_main_db
+  create_sandbox_db
+  echo "Databases initialized successfully"
+}
+
 # Main command handler
 case "$1" in
   apply)
@@ -338,8 +373,11 @@ case "$1" in
   rebuild-sandbox)
     rebuild_sandbox
     ;;
+  init)
+    init_databases
+    ;;
   *)
-    echo "Usage: $0 {apply|status|create NAME|test|rebuild-sandbox}"
+    echo "Usage: $0 {apply|status|create NAME|test|rebuild-sandbox|init}"
     exit 1
     ;;
 esac

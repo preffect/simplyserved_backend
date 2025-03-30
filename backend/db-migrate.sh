@@ -31,15 +31,17 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Ensure the db-migrator service is running
-echo -e "${INFO} Ensuring db-migrator service is available..."
-
-# Check if the db-migrator container is running
-if ! docker compose ps | grep -q "db-migrator"; then
-    echo -e "${INFO} Starting db-migrator service..."
-    docker compose up -d db-migrator
+# Ensure the postgres service is running
+echo -e "${INFO} Ensuring postgres service is available..."
+if ! docker compose ps postgres | grep -q "Up"; then
+    echo -e "${INFO} Starting postgres service..."
+    docker compose up -d postgres
+    
+    # Wait for postgres to be ready
+    echo -e "${INFO} Waiting for postgres to be ready..."
+    sleep 5
 fi
 
-# Execute the command in the db-migrator container
+# Run the db-migrator container with the command
 echo -e "${INFO} Executing command: $@"
-docker compose exec db-migrator /app/scripts/migrator.sh "$@"
+docker compose run --rm db-migrator /app/scripts/migrator.sh "$@"

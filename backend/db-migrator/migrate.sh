@@ -56,21 +56,31 @@ apply_migration() {
   
   # Get the up migration SQL
   local up_sql=$(extract_up_migration "$filename")
+  local extract_status=$?
   
-  if [ $? -ne 0 ]; then
+  if [ $extract_status -ne 0 ]; then
     echo "Error: Could not extract up migration for $filename"
     return 1
   fi
   
   # Execute the up migration
   echo "$up_sql" | PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to execute up migration for $filename"
+    return 1
+  fi
   
   # Record the migration
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
     INSERT INTO $MIGRATIONS_TABLE (filename, hash, date) VALUES ('$filename', '$hash', NOW());
   "
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to record migration $filename in database"
+    return 1
+  fi
   
   echo "Migration $filename applied successfully to $db"
+  return 0
 }
 
 # Extract up migration from a migration file
@@ -87,6 +97,7 @@ extract_up_migration() {
   fi
   
   echo "$up_sql"
+  return 0
 }
 
 # Extract down migration from a migration file
@@ -103,6 +114,7 @@ extract_down_migration() {
   fi
   
   echo "$down_sql"
+  return 0
 }
 
 # Rollback a migration
@@ -114,21 +126,31 @@ rollback_migration() {
   
   # Get the down migration SQL
   local down_sql=$(extract_down_migration "$filename")
+  local extract_status=$?
   
-  if [ $? -ne 0 ]; then
+  if [ $extract_status -ne 0 ]; then
     echo "Error: Could not extract down migration for $filename"
     return 1
   fi
   
   # Execute the down migration
   echo "$down_sql" | PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to execute down migration for $filename"
+    return 1
+  fi
   
   # Remove the migration record
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
     DELETE FROM $MIGRATIONS_TABLE WHERE filename = '$filename';
   "
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to remove migration record for $filename"
+    return 1
+  fi
   
   echo "Migration $filename rolled back successfully from $db"
+  return 0
 }
 
 # Ensure main database exists
@@ -315,7 +337,9 @@ test_migrations() {
       echo "Testing migration: $migration"
       
       # Test apply
-      if apply_migration "$migration" "$SANDBOX_DB_NAME"; then
+      apply_migration "$migration" "$SANDBOX_DB_NAME"
+      local apply_status=$?
+      if [ $apply_status -eq 0 ]; then
         echo "✅ Apply test passed for $migration"
         apply_result="PASS"
       else
@@ -323,13 +347,20 @@ test_migrations() {
         apply_result="FAIL"
       fi
       
-      # Test rollback
-      if rollback_migration "$migration" "$SANDBOX_DB_NAME"; then
-        echo "✅ Rollback test passed for $migration"
-        rollback_result="PASS"
+      # Only test rollback if apply succeeded
+      if [ $apply_status -eq 0 ]; then
+        rollback_migration "$migration" "$SANDBOX_DB_NAME"
+        local rollback_status=$?
+        if [ $rollback_status -eq 0 ]; then
+          echo "✅ Rollback test passed for $migration"
+          rollback_result="PASS"
+        else
+          echo "❌ Rollback test failed for $migration"
+          rollback_result="FAIL"
+        fi
       else
-        echo "❌ Rollback test failed for $migration"
-        rollback_result="FAIL"
+        echo "⚠️ Skipping rollback test since apply failed"
+        rollback_result="SKIPPED"
       fi
       
       test_results+=("$migration: Apply=$apply_result, Rollback=$rollback_result")

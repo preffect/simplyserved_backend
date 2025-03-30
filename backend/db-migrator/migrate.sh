@@ -103,11 +103,16 @@ rollback_migration() {
 create_sandbox_db() {
   echo "Creating sandbox database: $SANDBOX_DB_NAME"
   
-  # Connect to postgres database to manage other databases
-  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "
-    DROP DATABASE IF EXISTS $SANDBOX_DB_NAME;
-    CREATE DATABASE $SANDBOX_DB_NAME;
-  "
+  # Check if database exists
+  local db_exists=$(PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$SANDBOX_DB_NAME'")
+  
+  # Drop database if it exists (must be done outside of a transaction)
+  if [ "$db_exists" = "1" ]; then
+    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "DROP DATABASE $SANDBOX_DB_NAME;"
+  fi
+  
+  # Create the database
+  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d postgres -c "CREATE DATABASE $SANDBOX_DB_NAME;"
   
   # Create migrations table in sandbox
   ensure_migrations_table "$SANDBOX_DB_NAME"

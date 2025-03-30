@@ -54,8 +54,16 @@ apply_migration() {
   # Calculate hash of the migration file
   local hash=$(calculate_hash "$MIGRATIONS_DIR/$filename.sql")
   
-  # Execute the migration
-  PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -f "$MIGRATIONS_DIR/$filename.sql"
+  # Get the up migration SQL
+  local up_sql=$(extract_up_migration "$filename")
+  
+  if [ $? -ne 0 ]; then
+    echo "Error: Could not extract up migration for $filename"
+    return 1
+  fi
+  
+  # Execute the up migration
+  echo "$up_sql" | PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db
   
   # Record the migration
   PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $db -c "
@@ -63,6 +71,22 @@ apply_migration() {
   "
   
   echo "Migration $filename applied successfully to $db"
+}
+
+# Extract up migration from a migration file
+extract_up_migration() {
+  local version=$1
+  local file="$MIGRATIONS_DIR/$version.sql"
+  
+  # Extract content between "-- Up migration" and "-- Down migration"
+  local up_sql=$(sed -n '/-- Up migration/,/-- Down migration/ p' "$file" | grep -v "^-- Down migration" | grep -v "^--" | grep -v "^$")
+  
+  if [ -z "$up_sql" ]; then
+    echo "Warning: No up migration found in $file"
+    return 1
+  fi
+  
+  echo "$up_sql"
 }
 
 # Extract down migration from a migration file

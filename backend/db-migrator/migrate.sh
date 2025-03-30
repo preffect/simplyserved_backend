@@ -286,14 +286,16 @@ apply_migrations() {
       # Verify we can extract the migrations before attempting to apply
       extract_up_migration "$migration" > /dev/null
       if [ $? -ne 0 ]; then
-        echo "Error: Failed to extract UP migration for $migration"
+        echo "⛔️ ERROR: Failed to extract UP migration for $migration ⛔️"
+        echo "Migration must have both UP and DOWN sections properly formatted"
         failed=true
         break
       fi
       
       extract_down_migration "$migration" > /dev/null
       if [ $? -ne 0 ]; then
-        echo "Error: Failed to extract DOWN migration for $migration"
+        echo "⛔️ ERROR: Failed to extract DOWN migration for $migration ⛔️"
+        echo "Migration must have both UP and DOWN sections properly formatted"
         failed=true
         break
       fi
@@ -301,7 +303,7 @@ apply_migrations() {
       if apply_migration "$migration" "$SANDBOX_DB_NAME"; then
         echo "Sandbox test successful for $migration"
       else
-        echo "Error: Sandbox test failed for $migration"
+        echo "⛔️ ERROR: Sandbox test failed for $migration ⛔️"
         failed=true
         break
       fi
@@ -309,7 +311,8 @@ apply_migrations() {
   done
   
   if [ "$failed" = true ]; then
-    echo "Migration testing failed in sandbox. Aborting."
+    echo "⛔️ MIGRATION TESTING FAILED IN SANDBOX. ABORTING. ⛔️"
+    echo "Fix the issues before applying migrations"
     return 1
   fi
   
@@ -345,6 +348,7 @@ test_migrations() {
   
   local pending_count=0
   local test_results=()
+  local has_failures=false
   
   echo "Testing migrations in sandbox database..."
   
@@ -356,11 +360,13 @@ test_migrations() {
       extract_up_migration "$migration" > /dev/null
       local up_extract_status=$?
       if [ $up_extract_status -ne 0 ]; then
-        echo "❌ UP migration extraction failed for $migration"
+        echo "❌ UP migration extraction FAILED for $migration"
+        echo "⛔️ MIGRATION TEST FAILED: Cannot extract UP migration ⛔️"
         apply_result="FAIL"
         rollback_result="SKIPPED"
         test_results+=("$migration: Extract UP=FAIL, Apply=SKIPPED, Rollback=SKIPPED")
         pending_count=$((pending_count + 1))
+        has_failures=true
         continue
       fi
       
@@ -368,11 +374,13 @@ test_migrations() {
       extract_down_migration "$migration" > /dev/null
       local down_extract_status=$?
       if [ $down_extract_status -ne 0 ]; then
-        echo "❌ DOWN migration extraction failed for $migration"
+        echo "❌ DOWN migration extraction FAILED for $migration"
+        echo "⛔️ MIGRATION TEST FAILED: Cannot extract DOWN migration ⛔️"
         apply_result="SKIPPED"
         rollback_result="FAIL"
         test_results+=("$migration: Extract UP=PASS, Extract DOWN=FAIL, Apply=SKIPPED, Rollback=SKIPPED")
         pending_count=$((pending_count + 1))
+        has_failures=true
         continue
       fi
       
@@ -383,8 +391,10 @@ test_migrations() {
         echo "✅ Apply test passed for $migration"
         apply_result="PASS"
       else
-        echo "❌ Apply test failed for $migration"
+        echo "❌ Apply test FAILED for $migration"
+        echo "⛔️ MIGRATION TEST FAILED: Cannot apply migration ⛔️"
         apply_result="FAIL"
+        has_failures=true
       fi
       
       # Only test rollback if apply succeeded
@@ -395,8 +405,10 @@ test_migrations() {
           echo "✅ Rollback test passed for $migration"
           rollback_result="PASS"
         else
-          echo "❌ Rollback test failed for $migration"
+          echo "❌ Rollback test FAILED for $migration"
+          echo "⛔️ MIGRATION TEST FAILED: Cannot rollback migration ⛔️"
           rollback_result="FAIL"
+          has_failures=true
         fi
       else
         echo "⚠️ Skipping rollback test since apply failed"
@@ -419,6 +431,17 @@ test_migrations() {
       echo "$result"
     done
   fi
+  
+  if [ "$has_failures" = true ]; then
+    echo ""
+    echo "⛔️ MIGRATION TESTS FAILED ⛔️"
+    echo "Fix the issues before applying migrations"
+    return 1
+  else
+    echo ""
+    echo "✅ All migration tests PASSED"
+    return 0
+  fi
 }
 
 # Rebuild sandbox database with all migrations
@@ -440,7 +463,8 @@ rebuild_sandbox() {
     # Verify we can extract the migrations before attempting to apply
     extract_up_migration "$migration" > /dev/null
     if [ $? -ne 0 ]; then
-      echo "Error: Failed to extract UP migration for $migration"
+      echo "⛔️ ERROR: Failed to extract UP migration for $migration ⛔️"
+      echo "Migration must have both UP and DOWN sections properly formatted"
       failed=true
       break
     fi
@@ -448,17 +472,18 @@ rebuild_sandbox() {
     if apply_migration "$migration" "$SANDBOX_DB_NAME"; then
       count=$((count + 1))
     else
-      echo "Error: Failed to apply migration $migration"
+      echo "⛔️ ERROR: Failed to apply migration $migration ⛔️"
       failed=true
       break
     fi
   done
   
   if [ "$failed" = true ]; then
-    echo "Sandbox rebuild failed."
+    echo "⛔️ SANDBOX REBUILD FAILED ⛔️"
+    echo "Fix the issues before proceeding"
     return 1
   else
-    echo "Sandbox database rebuilt with $count migrations"
+    echo "✅ Sandbox database rebuilt with $count migrations"
   fi
 }
 
@@ -474,6 +499,7 @@ init_databases() {
 case "$1" in
   apply)
     apply_migrations
+    exit $?
     ;;
   status)
     show_status
@@ -483,9 +509,11 @@ case "$1" in
     ;;
   test)
     test_migrations
+    exit $?
     ;;
   rebuild-sandbox)
     rebuild_sandbox
+    exit $?
     ;;
   init)
     init_databases

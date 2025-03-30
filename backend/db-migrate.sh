@@ -8,9 +8,9 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 INFO="ℹ️"
 
-# Check if docker-compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo -e "${RED}❌ docker-compose is not installed. Please install it first.${NC}"
+# Check if docker compose is installed
+if ! command -v docker compose &> /dev/null; then
+    echo -e "${RED}❌ docker compose is not installed. Please install it first.${NC}"
     exit 1
 fi
 
@@ -35,11 +35,11 @@ fi
 echo -e "${INFO} Ensuring db-migrator service is available..."
 
 # Check if the db-migrator container is running
-if ! docker-compose ps | grep -q "db-migrator"; then
+if ! docker compose ps | grep -q "db-migrator"; then
     echo -e "${INFO} Starting db-migrator service..."
-    docker-compose up -d db-migrator
+    docker compose up -d db-migrator
 fi
 
 # Execute the command in the db-migrator container
 echo -e "${INFO} Executing command: $@"
-docker-compose exec db-migrator /app/scripts/migrator.sh "$@"
+docker compose exec db-migrator /app/scripts/migrator.sh "$@"

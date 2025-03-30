@@ -4,9 +4,9 @@ set -e
 MIGRATIONS_DIR="/migrations"
 MIGRATIONS_TABLE="schema_migrations"
 DB_HOST="postgres"
-DB_USER="${POSTGRES_USER:-postgres}"
-DB_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
-DB_NAME="${POSTGRES_DB:-simplyserved}"
+DB_USER="${DATABASE_MIGRATE_USER:-postgres}"
+DB_PASSWORD="${DATABASE_MIGRATE_PASSWORD:-postgres}"
+DB_NAME="${APPLICATION_DB:-simplyserved}"
 
 # Ensure migrations directory exists
 mkdir -p "$MIGRATIONS_DIR"

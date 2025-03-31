@@ -24,7 +24,7 @@ APP_MIGRATIONS_TABLE="${APP_DB}_migrations"
 SANDBOX_MIGRATIONS_TABLE="${APP_DB}_sandbox_migrations"
 
 # PostgreSQL connection string
-PG_CONN="-h postgres -U ${MIGRATE_USER}"
+PG_CONN="-h postgres -U ${MIGRATE_USER} -d ${APP_DB}"
 export PGPASSWORD="${MIGRATE_PASSWORD}"
 
 # Function to print usage information
@@ -205,13 +205,13 @@ EOF
 # Function to extract UP migration from a file
 extract_up_migration() {
     local file="$1"
-    sed -n '/-- UP MIGRATION START/,/-- UP MIGRATION END/p' "${file}" | grep -v "-- UP MIGRATION" | grep -v "^$"
+    sed -n '/-- UP MIGRATION START/,/-- UP MIGRATION END/p' "${file}" | grep -v "'-- UP MIGRATION'" | grep -v "^$"
 }
 
 # Function to extract DOWN migration from a file
 extract_down_migration() {
     local file="$1"
-    sed -n '/-- DOWN MIGRATION START/,/-- DOWN MIGRATION END/p' "${file}" | grep -v "-- DOWN MIGRATION" | grep -v "^$"
+    sed -n '/-- DOWN MIGRATION START/,/-- DOWN MIGRATION END/p' "${file}" | grep -v "'-- DOWN MIGRATION'" | grep -v "^$"
 }
 
 # Function to calculate MD5 hash of a file

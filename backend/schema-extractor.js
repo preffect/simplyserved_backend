@@ -184,12 +184,20 @@ for (let i = 0; i < extractedContent.length; i++) {
 // Process content to remove comments if flag is set
 let outputContent = finalContent;
 if (removeComments) {
+  // Convert array to string for easier regex processing
+  let contentString = outputContent.join('\n');
+  
   // Remove ### comments that can span multiple lines
-  const contentString = outputContent.join('\n');
-  const withoutComments = contentString.replace(/###[\s\S]*?###/g, '');
+  contentString = contentString.replace(/###[\s\S]*?###/g, '');
+  
+  // Remove GraphQL documentation comments (""" ... """)
+  contentString = contentString.replace(/"""[\s\S]*?"""/g, '');
+  
+  // Remove single line comments that start with #
+  contentString = contentString.replace(/^#.*$/gm, '');
   
   // Split back into lines and remove any empty lines that might have been created
-  outputContent = withoutComments.split('\n').filter(line => line.trim() !== '');
+  outputContent = contentString.split('\n').filter(line => line.trim() !== '');
   
   console.log('Comments have been removed from the output');
 }

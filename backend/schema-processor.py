@@ -130,6 +130,16 @@ def remove_object_definitions(type_definitions: Dict[str, Any]) -> Dict[str, Any
     
     return simplified_definitions
 
+def remove_blank_lines(content: str) -> str:
+    """Remove all blank lines from the schema"""
+    # Replace multiple consecutive newlines with a single newline
+    content = re.sub(r'\n\s*\n', '\n', content)
+    
+    # Remove leading and trailing whitespace
+    content = content.strip()
+    
+    return content
+
 def process_schema(content: str, args) -> str:
     """Process the schema according to the provided arguments"""
     processed_content = content

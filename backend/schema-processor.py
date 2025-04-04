@@ -137,6 +137,10 @@ def process_schema(content: str, args) -> str:
     # First pass: remove comments if requested
     if args.remove_comments:
         processed_content = remove_comments(processed_content)
+        
+        # Run blank line removal immediately after comment removal if requested
+        if args.remove_blank_lines:
+            processed_content = remove_blank_lines(processed_content)
     
     # Second pass: extract relevant types if tables are specified
     if args.tables:
@@ -152,6 +156,13 @@ def process_schema(content: str, args) -> str:
         
         # Reconstruct the schema with only the relevant types
         processed_content = '\n\n'.join(info['definition'] for info in type_definitions.values())
+        
+        # Apply blank line removal after table filtering if requested and not already done
+        if args.remove_blank_lines and not args.remove_comments:
+            processed_content = remove_blank_lines(processed_content)
+    elif args.remove_blank_lines and not args.remove_comments:
+        # If we're not filtering tables but want to remove blank lines
+        processed_content = remove_blank_lines(processed_content)
     
     return processed_content
 
@@ -159,6 +170,7 @@ def main():
     parser = argparse.ArgumentParser(description='Process GraphQL schema file')
     parser.add_argument('--schema-file', required=True, help='Path to the GraphQL schema file')
     parser.add_argument('--remove-comments', action='store_true', help='Remove all comments from the schema')
+    parser.add_argument('--remove-blank-lines', action='store_true', help='Remove all blank lines from the schema')
     parser.add_argument('--tables', help='Comma-separated list of tables to include')
     parser.add_argument('--simple-interactions', action='store_true', help='Only keep CRUD mutations and queries')
     parser.add_argument('--no-objects', action='store_true', help='Only keep ENUM definitions complete')

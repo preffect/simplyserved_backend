@@ -10,14 +10,21 @@
 const fs = require('fs');
 const path = require('path');
 
-// Check if arguments are provided
-if (process.argv.length < 3) {
-  console.error('Usage: node schema-extractor.js <table1> <table2> ...');
+// Parse command line arguments
+const args = process.argv.slice(2);
+const removeCommentsFlag = '--remove-comments';
+const removeComments = args.includes(removeCommentsFlag);
+
+// Remove the flag from args if present
+const tables = removeComments 
+  ? args.filter(arg => arg !== removeCommentsFlag) 
+  : args;
+
+// Check if tables are provided
+if (tables.length === 0) {
+  console.error('Usage: node schema-extractor.js [--remove-comments] <table1> <table2> ...');
   process.exit(1);
 }
-
-// Get tables from command line arguments
-const tables = process.argv.slice(2);
 const tableNames = tables.map(t => t.toLowerCase());
 const outputFileName = `api_context_${tables.join('-')}.graphql`;
 
@@ -174,9 +181,22 @@ for (let i = 0; i < extractedContent.length; i++) {
   }
 }
 
-// Write the extracted content to the output file
+// Process content to remove comments if flag is set
+let outputContent = finalContent;
+if (removeComments) {
+  // Remove ### comments that can span multiple lines
+  const contentString = outputContent.join('\n');
+  const withoutComments = contentString.replace(/###[\s\S]*?###/g, '');
+  
+  // Split back into lines and remove any empty lines that might have been created
+  outputContent = withoutComments.split('\n').filter(line => line.trim() !== '');
+  
+  console.log('Comments have been removed from the output');
+}
+
+// Write the processed content to the output file
 try {
-  fs.writeFileSync(outputFileName, finalContent.join('\n'));
+  fs.writeFileSync(outputFileName, outputContent.join('\n'));
   console.log(`Successfully created ${outputFileName}`);
 } catch (error) {
   console.error(`Error writing output file: ${error.message}`);

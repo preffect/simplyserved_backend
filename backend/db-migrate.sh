@@ -24,6 +24,7 @@ if [ $# -eq 0 ]; then
     echo "  apply                Apply all pending migrations (tests in sandbox first)"
     echo "  status               Show migration status"
     echo "  create NAME          Create a new migration with NAME"
+    echo "  rollback             Roll back the last applied migration"
     echo "  test                 Test migrations in sandbox and report results"
     echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
     echo "  init                 Initialize sandbox database, and the migrations table in the application database and the sandbox database"

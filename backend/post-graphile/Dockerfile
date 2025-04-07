@@ -7,12 +7,15 @@ RUN apk add --no-cache postgresql-client
 RUN apk add --no-cache bash
 RUN apk add --no-cache vim
 
-RUN npm install -g postgraphile @graphile/pg-pubsub
-RUN npm install -g @graphile-contrib/pg-simplify-inflector
-RUN npm install -g postgraphile-plugin-connection-filter
+# Install dependencies locally instead of globally
+RUN npm init -y
+RUN npm install express postgraphile @graphile/pg-pubsub
+RUN npm install @graphile-contrib/pg-simplify-inflector
+RUN npm install postgraphile-plugin-connection-filter
 
 COPY ./wait-for-postgres.sh /app/wait-for-postgres.sh
 COPY ./allowedOriginPlugin.js /app/allowedOriginPlugin.js
+COPY ./app.js /app/app.js
 RUN chmod +x /app/wait-for-postgres.sh
 
 COPY ./entrypoint.sh /app/entrypoint.sh

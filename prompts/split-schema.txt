@@ -1,0 +1,8 @@
+/add backend/post-graphile/schema/schema.graphql 
+
+schema.graphql is a graphql schema file. It is too large to provide as context to an AI.
+I need a very robust tool to parse this file, and extract all root types, queries and mutations specific to a list of tables passed in. 
+
+The results should placed in a file named "api_contenxt_{list of tables seperated by '-'}.graphql. 
+
+The resulting file is meant to provide context to an AI for generating client side code to interact with a graphql server. 

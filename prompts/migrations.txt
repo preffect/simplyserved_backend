@@ -1,0 +1,54 @@
+ add a new dockerized tool for executing postgresql database migrations called db-migrator. 
+ db-migrator should mount ./dababase/migrations folder for persistence of migrations files. 
+ follow a standard folder structure and naming convention prefixed with a date.00x ordering tag.
+
+ This tool should have the following commands:
+  apply                Apply all pending migrations (tests in sandbox first)
+  status               Show migration status
+  create NAME          Create a new migration with NAME
+  test                 Test migrations in sandbox and report results
+  rebuild-sandbox      Recreate sandbox database with all migrations
+  init                 Initialize sandbox database, and the migrations table in the application database and the sandbox database
+  help                 Show this help message
+
+  The postgres database is containerised and can be accessed by the postgres service name.  
+  User the APPLICATION_DB,DATABASE_MIGRATE_USER and DATABASE_MIGRATE_PASSWORD from the .env file
+  Add a wrapper script for interacting with the db-migrator from outside of docker.
+  Ensure best practices in project structure and coding standards
+
+Add a concept migration testing process to the db-migrator
+- this new testing process should use a new DB schema {APPLICATION_DB}_sandbox
+- Use the _sandbox database migration table when testing migrations
+- When running apply migrations, the migrator should execute against the _sandbox database first, test that the migration worked before applying to the APPLICATION_DB.
+- the flag "test" which will apply new migrations to the _sandbox, report if it was successful or not, then rollback the migration, report if that was successful or not
+- add a rebuild-sandbox flag which will check if the {APPLICATION_DB}_sandbox database exists. If it does, drop the _sandbox database, recreate it and apply all migrations
+
+The {APPLICATION_DB}_migrations table and {APPLICATION_DB}_sandbox_migrations tables should have the following structure.
+
+      id serial PRIMARY KEY,           -- Unique identifier for each migration
+      filename text NOT NULL UNIQUE,   -- Name of the migration file
+      hash text NOT NULL,              -- md5 hash of the migration file to ensure integrity
+      date timestamptz NOT NULL DEFAULT now() -- Timestamp when the migration was applied
+
+Migration files will be of the following format. Extract the Up migration when applying, and extract the Down migration when rolling back:
+
+-- Migration: $name
+-- Created at: $(date -u +"%Y-%m-%d %H:%M:%S")
+
+-- Write your migration SQL here
+
+-- UP MIGRATION START
+-- Add your schema changes here
+
+
+-- UP MIGRATION END
+
+-- DOWN MIGRATION START
+-- Add SQL to revert the changes made in the Up migration
+-- This section is required for testing and rollbacks
+
+-- DOWN MIGRATION END
+
+```
+
+Migration failures and successes should be reported to the user with obvoius icons. Test migrations that fail should block the APPLICATION_DB migration

@@ -1,0 +1,35 @@
+Create a dockerized instance of postgresql service:
+- Set the base folder for this service to ./backend/database/
+- use the latest stable version of postgres
+- initialize a database simplyserved
+- add the connection string to a ./backend/.env file
+
+Write a script that creates a user:
+- this script should accept a username and password and a --migrations flag
+- this script should check it the postgresql container is running, and start it if not
+- watch for the container to startup
+- exec into the container as the postgres user
+- execute create user with the provided username and password
+- create the user with full CRUD permissions on the simplyserved database
+- if the --migrations flag is set, give super user permissions
+- add the username and credentials the ./backend/.env file
+
+We ae going to use both PostGraphile to generate  with graphile-migrate
+
+Create a graphile-migrate container service:
+- base folder ./backend/graphile-migrate/
+- mount a migration folder
+- use the ./backend/.env file to access database credentials and connection string
+
+Create a PostGraphile container service:
+- base folder ./backend/post-graphile/
+- mount the database files folder
+- use the ./backend/.env file to access database credentials and connection string
+- setup to watch for schema changes and generate GraphQL Schema
+- add connection info to the GraphQL server to the ./backend/.env file
+
+Use "docker compose" to compose these services, and ensure startup dependencies are followed
+
+Write a script to startup all services:
+- first check if containers need to be build (if relevant files have changes for each service)
+- use docker compose up to run services

@@ -4,6 +4,7 @@
 -- Write your migration SQL here
 
 -- UP MIGRATION START
+BEGIN;
 -- Create person_type enum
 CREATE TYPE person_type AS ENUM ('STAFF', 'CUSTOMER');
 
@@ -98,18 +99,12 @@ BEFORE UPDATE ON customer
 FOR EACH ROW
 EXECUTE FUNCTION update_modified_at();
 
--- Add constraint to ensure person_type matches the related tables
-ALTER TABLE person ADD CONSTRAINT check_person_type_consistency
-CHECK (
-    (person_type = 'STAFF' AND id IN (SELECT person_id FROM staff_person)) OR
-    (person_type = 'CUSTOMER' AND id IN (SELECT person_id FROM customer)) OR
-    (archived_at IS NOT NULL)
-);
+COMMIT;
 -- UP MIGRATION END
 
 -- DOWN MIGRATION START
+BEGIN;
 -- Drop constraints first
-ALTER TABLE person DROP CONSTRAINT IF EXISTS check_person_type_consistency;
 
 -- Drop triggers
 DROP TRIGGER IF EXISTS person_modified ON person;
@@ -127,4 +122,5 @@ DROP TABLE IF EXISTS person;
 -- Drop types
 DROP TYPE IF EXISTS staff_type;
 DROP TYPE IF EXISTS person_type;
+COMMIT;
 -- DOWN MIGRATION END

@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
 
@@ -6,10 +7,28 @@ const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflect
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Configure CORS for specific origin
+const corsOptions = {
+  origin: 'http://conan-devbox3.westus3.cloudapp.azure.com',
+  methods: ['GET', 'POST', 'HEAD'],
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Accept',
+    'Authorization',
+    'X-Apollo-Tracing',
+    'Content-Type',
+    'Content-Length',
+    'X-PostGraphile-Explain'
+  ],
+  exposedHeaders: ['X-GraphQL-Event-Stream']
+};
+
+// Apply CORS middleware
+app.use(cors(corsOptions));
+
 // Construct the connection string using environment variables
 const DATABASE_APP_URL = `postgres://${process.env.DATABASE_MIGRATE_USER}:${process.env.DATABASE_MIGRATE_PASSWORD}@postgres:5432/${process.env.APPLICATION_DB}`;
-
-// const allowedOriginPlugin = require('./allowedOriginPlugin');
 // Add PostGraphile middleware to Express
 app.use(
   postgraphile(
@@ -23,14 +42,11 @@ app.use(
       simpleCollections: 'only',
       exportGqlSchemaPath: '/app/schema/schema.graphql',
       sortExport: true,
-      // appendPlugins: [PgSimplifyInflectorPlugin, allowedOriginPlugin],
-      enableCors: true,
+      appendPlugins: [PgSimplifyInflectorPlugin],
+      enableCors: false, // Disable PostGraphile's built-in CORS handling
     }
   )
 );
-
-// Uncomment to use the allowed origin plugin
-//app.use(allowedOriginPlugin());
 
 // Start the server
 app.listen(PORT, '0.0.0.0', () => {

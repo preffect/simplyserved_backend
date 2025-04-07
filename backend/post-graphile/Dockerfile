@@ -12,6 +12,7 @@ RUN npm init -y
 RUN npm install express postgraphile @graphile/pg-pubsub
 RUN npm install @graphile-contrib/pg-simplify-inflector
 RUN npm install postgraphile-plugin-connection-filter
+RUN npm install cors
 
 COPY ./wait-for-postgres.sh /app/wait-for-postgres.sh
 COPY ./allowedOriginPlugin.js /app/allowedOriginPlugin.js

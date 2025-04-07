@@ -37,6 +37,7 @@ print_usage() {
     echo "  apply                Apply all pending migrations (tests in sandbox first)"
     echo "  status               Show migration status"
     echo "  create NAME          Create a new migration with NAME"
+    echo "  rollback             Roll back the last applied migration"
     echo "  test                 Test migrations in sandbox and report results"
     echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
     echo "  init                 Initialize sandbox database, and the migrations table in the application database and the sandbox database"
@@ -363,6 +364,54 @@ apply_all_migrations_to_sandbox() {
     fi
 }
 
+# Function to rollback the last migration in the application database
+rollback_last_migration() {
+    # Get the last applied migration from the application database
+    local last_migration=$(psql ${PG_CONN} -d "${APP_DB}" -t -c "SELECT filename FROM ${APP_MIGRATIONS_TABLE} ORDER BY id DESC LIMIT 1;")
+    last_migration=$(echo "${last_migration}" | tr -d '[:space:]')
+    
+    if [ -z "${last_migration}" ]; then
+        echo -e "${INFO} No migrations to roll back"
+        return 0
+    fi
+    
+    echo -e "${INFO} Rolling back migration: ${last_migration}"
+    
+    # Find the migration file
+    local migration_file="${MIGRATIONS_DIR}/${last_migration}"
+    
+    if [ ! -f "${migration_file}" ]; then
+        echo -e "${FAILURE} Migration file not found: ${migration_file}"
+        return 1
+    fi
+    
+    # Extract the DOWN migration SQL
+    local down_sql=$(extract_down_migration "${migration_file}")
+    
+    if [ -z "${down_sql}" ]; then
+        echo -e "${FAILURE} No DOWN migration found in ${last_migration}"
+        return 1
+    fi
+    
+    # Apply the rollback to the application database
+    if echo "${down_sql}" | psql ${PG_CONN} -d "${APP_DB}" -v ON_ERROR_STOP=1; then
+        # Remove the migration from the application migrations table
+        psql ${PG_CONN} -d "${APP_DB}" -c "
+        DELETE FROM ${APP_MIGRATIONS_TABLE} WHERE filename = '${last_migration}';"
+        
+        echo -e "${SUCCESS} Migration ${last_migration} rolled back successfully"
+        
+        # Also rollback in sandbox to keep them in sync
+        echo -e "${INFO} Rolling back migration in sandbox database to keep in sync..."
+        rollback_migration_in_sandbox "${migration_file}"
+        
+        return 0
+    else
+        echo -e "${FAILURE} Failed to roll back migration ${last_migration}"
+        return 1
+    fi
+}
+
 # Function to test migrations in sandbox
 test_migrations() {
     # Get list of all migration files
@@ -511,6 +560,9 @@ case "$1" in
         ;;
     create)
         create_migration "$2"
+        ;;
+    rollback)
+        rollback_last_migration
         ;;
     test)
         test_migrations

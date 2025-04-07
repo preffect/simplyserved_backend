@@ -47,7 +47,7 @@ CREATE POLICY organization_tenant_isolation ON organization
     USING (id = current_setting('app.current_tenant', true)::UUID);
 
 -- Grant permissions to use the organization table
-GRANT SELECT, INSERT, UPDATE ON organization TO authenticated;
+GRANT SELECT, INSERT, UPDATE ON organization TO simplyserved;
 
 COMMIT;
 -- UP MIGRATION END

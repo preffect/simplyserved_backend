@@ -3,7 +3,7 @@ const cors = require('cors');
 const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
 const jwt = require("jsonwebtoken");
-const {OAuth2Client} = require('google-auth-library');
+const { googleAuthMiddleware } = require('./googleAuth');
 
 // Create Express app
 const app = express();
@@ -61,35 +61,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 //   algorithms: ["RS256"],
 // });
 
-app.use( async (req, res, next) => {
-  const client = new OAuth2Client();
-  async function verify() {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader) return next(); // No token provided
-
-    const token = authHeader.split(" ")[1]; // Extract Bearer token
-    const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: "413215377675-cc4qoe522uf7ge33ss1rfp9mkni1lihs.apps.googleusercontent.com",  // Specify the WEB_CLIENT_ID of the app that accesses the backend
-        // Or, if multiple clients access the backend:
-        //[WEB_CLIENT_ID_1, WEB_CLIENT_ID_2, WEB_CLIENT_ID_3]
-    });
-    const payload = ticket.getPayload();
-    const userid = payload['sub'];
-    return payload;
-    // If the request specified a Google Workspace domain:
-    // const domain = payload['hd'];
-  }
-  try {
-    const decoded = await verify();
-    console.log("Decoded JWT:", decoded);
-    req.jwtClaims = decoded; // Attach decoded claims to request object
-    next();
-  } catch (err) {
-    console.error("Invalid JWT:", err);
-    res.status(401).send("Unauthorized");
-  }
-});
+app.use(googleAuthMiddleware);
 
 const pgSettings = (req) => ({
   "app.current_tenant": req.jwtClaims?.current_tenant || null,

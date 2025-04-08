@@ -8,44 +8,14 @@ const { handleTokenExchange } = require('./tokenExchange.js');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Apply CORS middleware
 app.use(corsMiddleware);
 
-// Parse JSON request bodies
-//app.use(express.json());
-
 // Token exchange endpoint with Google Auth middleware
 app.post('/token-exchange', googleAuthMiddleware, express.json(), handleTokenExchange);
 
-
-// const jwt = require("express-jwt");
-// const jwksRsa = require("jwks-rsa");
-
-// // ...
-
-// // Authentication middleware. When used, the
-// // Access Token must exist and be verified against
-// // the Auth0 JSON Web Key Set.
-// // On successful verification, the payload of the
-// // decrypted Access Token is appended to the
-// // request (`req`) as a `user` parameter.
-// const checkJwt = jwt({
-//   // Dynamically provide a signing key
-//   // based on the `kid` in the header and
-//   // the signing keys provided by the JWKS endpoint.
-//   secret: jwksRsa.expressJwtSecret({
-//     cache: true,
-//     rateLimit: true,
-//     jwksRequestsPerMinute: 5,
-//     jwksUri: `https://YOUR_DOMAIN/.well-known/jwks.json`,
-//   }),
-
-//   // Validate the audience and the issuer.
-//   audience: "YOUR_API_IDENTIFIER",
-//   issuer: `https://YOUR_DOMAIN/`,
-//   algorithms: ["RS256"],
-// });
 const pgSettings = (req) => ({
   "app.current_tenant": req.jwtClaims?.current_tenant || null,
   "app.current_user": req.jwtClaims?.current_user || null,

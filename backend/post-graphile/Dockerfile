@@ -16,8 +16,7 @@ RUN npm install cors
 RUN npm install google-auth-library
 
 COPY ./wait-for-postgres.sh /app/wait-for-postgres.sh
-COPY ./allowedOriginPlugin.js /app/allowedOriginPlugin.js
-COPY ./app.js /app/app.js
+COPY ./src/* /app/
 RUN chmod +x /app/wait-for-postgres.sh
 
 COPY ./entrypoint.sh /app/entrypoint.sh

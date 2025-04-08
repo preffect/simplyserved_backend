@@ -3,7 +3,7 @@ const cors = require('cors');
 const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
 const jwt = require("jsonwebtoken");
-const { googleAuthMiddleware } = require('./googleAuth');
+const { googleAuthMiddleware } = require('./googleAuth.js');
 
 // Create Express app
 const app = express();

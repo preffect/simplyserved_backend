@@ -13,10 +13,10 @@ const PORT = process.env.PORT || 5000;
 app.use(corsMiddleware);
 
 // Parse JSON request bodies
-app.use(express.json());
+//app.use(express.json());
 
 // Token exchange endpoint with Google Auth middleware
-app.post('/token-exchange', googleAuthMiddleware, handleTokenExchange);
+app.post('/token-exchange', googleAuthMiddleware, express.json(), handleTokenExchange);
 
 
 // const jwt = require("express-jwt");

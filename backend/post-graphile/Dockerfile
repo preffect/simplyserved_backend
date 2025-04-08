@@ -10,10 +10,8 @@ RUN apk add --no-cache vim
 # Install dependencies locally instead of globally
 RUN npm init -y
 RUN npm install express postgraphile @graphile/pg-pubsub
-RUN npm install @graphile-contrib/pg-simplify-inflector
-RUN npm install postgraphile-plugin-connection-filter
-RUN npm install cors
-RUN npm install google-auth-library
+RUN npm install @graphile-contrib/pg-simplify-inflector postgraphile-plugin-connection-filter
+RUN npm install cors google-auth-library pg
 
 COPY ./wait-for-postgres.sh /app/wait-for-postgres.sh
 COPY ./src/* /app/
@@ -24,8 +22,7 @@ RUN chmod +x /app/entrypoint.sh
 
 COPY ./.postgraphilerc.js /app/.postgraphilerc.js
 
-RUN echo "alias ll='ls -alF'" >> /root/.bashrc
-RUN echo "alias vi='vim'" >> /root/.bashrc
+RUN echo "alias ll='ls -alF'" >> /root/.bashrc && echo "alias vi='vim'" >> /root/.bashrc
 
 EXPOSE 5000
 

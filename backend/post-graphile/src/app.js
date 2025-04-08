@@ -1,20 +1,13 @@
 const express = require('express');
-const { postgraphile, withPostGraphileContext } = require('postgraphile');
+const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
-const jwt = require("jsonwebtoken");
-const { googleAuthMiddleware, verifyGoogleToken } = require('./googleAuth.js');
+const { googleAuthMiddleware } = require('./googleAuth.js');
 const { corsMiddleware } = require('./corsConfig.js');
-const { Pool } = require('pg');
+const { handleTokenExchange } = require('./tokenExchange.js');
 
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = process.env.JWT_SECRET;
-
-// Create a PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: `postgres://${process.env.DATABASE_MIGRATE_USER}:${process.env.DATABASE_MIGRATE_PASSWORD}@postgres:5432/${process.env.APPLICATION_DB}`
-});
 
 // Apply CORS middleware
 app.use(corsMiddleware);
@@ -22,56 +15,8 @@ app.use(corsMiddleware);
 // Parse JSON request bodies
 app.use(express.json());
 
-app.use(googleAuthMiddleware);
-
-// Token exchange endpoint
-app.post('/token-exchange', async (req, res) => {
-  try {
-    const { token } = req.body;
-    
-    if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
-    }
-    
-    // Verify the Google token
-    const googlePayload = await verifyGoogleToken(token);
-    
-    if (!googlePayload || !googlePayload.email) {
-      return res.status(401).json({ error: 'Invalid Google token' });
-    }
-    
-    // Query the database for the user by email
-    const result = await pool.query(
-      'SELECT id, email FROM public.user WHERE email = $1',
-      [googlePayload.email]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const user = result.rows[0];
-    
-    // Create a custom JWT
-    const customToken = jwt.sign(
-      { 
-        current_user: user.id,
-        email: user.email,
-        sub: googlePayload.sub,
-        name: googlePayload.name
-      },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-    
-    res.json({ token: customToken });
-  } catch (error) {
-    console.error('Token exchange error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// Secret for signing/verifying JWTs
+// Token exchange endpoint with Google Auth middleware
+app.post('/token-exchange', googleAuthMiddleware, handleTokenExchange);
 
 
 // const jwt = require("express-jwt");

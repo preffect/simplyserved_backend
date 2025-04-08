@@ -14,10 +14,16 @@ const pool = new Pool({
  */
 async function handleTokenExchange(req, res) {
   try {
-    const { token } = req.body;
+    const authHeader = req.headers["authorization"];
+    
+    if (!authHeader) {
+      return res.status(400).json({ error: 'Authorization header is required' });
+    }
+    
+    const token = authHeader.split(" ")[1]; // Extract Bearer token
     
     if (!token) {
-      return res.status(400).json({ error: 'Token is required' });
+      return res.status(400).json({ error: 'Bearer token is required' });
     }
     
     // Verify the Google token

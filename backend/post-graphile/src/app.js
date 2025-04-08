@@ -4,6 +4,7 @@ const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflect
 const { googleAuthMiddleware } = require('./googleAuth.js');
 const { corsMiddleware } = require('./corsConfig.js');
 const { handleTokenExchange } = require('./tokenExchange.js');
+const { configureTLS } = require('./tlsConfig.js');
 
 // Create Express app
 const app = express();
@@ -54,7 +55,5 @@ app.use(
   )
 );
 
-// Start the server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Express with PostGraphile server running on port ${PORT}`);
-});
+// Start the server with TLS if certificates are available
+configureTLS(app, PORT);

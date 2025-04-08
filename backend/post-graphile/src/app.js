@@ -1,33 +1,16 @@
 const express = require('express');
-const cors = require('cors');
 const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
 const jwt = require("jsonwebtoken");
 const { googleAuthMiddleware } = require('./googleAuth.js');
+const { corsMiddleware } = require('./corsConfig.js');
 
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Configure CORS for specific origin
-const corsOptions = {
-  origin: 'http://conan-devbox3.westus3.cloudapp.azure.com',
-  methods: ['GET', 'POST', 'HEAD'],
-  allowedHeaders: [
-    'Origin',
-    'X-Requested-With',
-    'Accept',
-    'Authorization',
-    'X-Apollo-Tracing',
-    'Content-Type',
-    'Content-Length',
-    'X-PostGraphile-Explain'
-  ],
-  exposedHeaders: ['X-GraphQL-Event-Stream']
-};
-
 // Apply CORS middleware
-app.use(cors(corsOptions));
+app.use(corsMiddleware);
 
 // Secret for signing/verifying JWTs
 const JWT_SECRET = process.env.JWT_SECRET;

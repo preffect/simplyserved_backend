@@ -48,7 +48,7 @@ fi
 
 # Execute SQL command in postgres container
 echo "Creating organization '$ORG_NAME'..."
-ORG_ID=$(docker compose exec -T postgres psql -U "$DATABASE_APP_USER" -d "$APPLICATION_DB" -t -c "$SQL_COMMAND" | tr -d '[:space:]')
+ORG_ID=$(docker compose exec -T postgres psql -U "$DATABASE_ORG_CREATE_USER" -d "$APPLICATION_DB" -t -c "$SQL_COMMAND" | tr -d '[:space:]')
 
 if [ -z "$ORG_ID" ]; then
     echo "Error: Failed to create organization"

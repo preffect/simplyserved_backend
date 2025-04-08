@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { postgraphile } = require('postgraphile');
 const PgSimplifyInflectorPlugin = require('@graphile-contrib/pg-simplify-inflector');
+const jwt = require("jsonwebtoken");
+const {OAuth2Client} = require('google-auth-library');
 
 // Create Express app
 const app = express();
@@ -27,8 +29,77 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
+// Secret for signing/verifying JWTs
+const JWT_SECRET = process.env.JWT_SECRET;
+
+
+// const jwt = require("express-jwt");
+// const jwksRsa = require("jwks-rsa");
+
+// // ...
+
+// // Authentication middleware. When used, the
+// // Access Token must exist and be verified against
+// // the Auth0 JSON Web Key Set.
+// // On successful verification, the payload of the
+// // decrypted Access Token is appended to the
+// // request (`req`) as a `user` parameter.
+// const checkJwt = jwt({
+//   // Dynamically provide a signing key
+//   // based on the `kid` in the header and
+//   // the signing keys provided by the JWKS endpoint.
+//   secret: jwksRsa.expressJwtSecret({
+//     cache: true,
+//     rateLimit: true,
+//     jwksRequestsPerMinute: 5,
+//     jwksUri: `https://YOUR_DOMAIN/.well-known/jwks.json`,
+//   }),
+
+//   // Validate the audience and the issuer.
+//   audience: "YOUR_API_IDENTIFIER",
+//   issuer: `https://YOUR_DOMAIN/`,
+//   algorithms: ["RS256"],
+// });
+
+app.use( async (req, res, next) => {
+  const client = new OAuth2Client();
+  async function verify() {
+    const authHeader = req.headers["authorization"];
+    if (!authHeader) return next(); // No token provided
+
+    const token = authHeader.split(" ")[1]; // Extract Bearer token
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: "413215377675-cc4qoe522uf7ge33ss1rfp9mkni1lihs.apps.googleusercontent.com",  // Specify the WEB_CLIENT_ID of the app that accesses the backend
+        // Or, if multiple clients access the backend:
+        //[WEB_CLIENT_ID_1, WEB_CLIENT_ID_2, WEB_CLIENT_ID_3]
+    });
+    const payload = ticket.getPayload();
+    const userid = payload['sub'];
+    return payload;
+    // If the request specified a Google Workspace domain:
+    // const domain = payload['hd'];
+  }
+  try {
+    const decoded = await verify();
+    console.log("Decoded JWT:", decoded);
+    req.jwtClaims = decoded; // Attach decoded claims to request object
+    next();
+  } catch (err) {
+    console.error("Invalid JWT:", err);
+    res.status(401).send("Unauthorized");
+  }
+});
+
+const pgSettings = (req) => ({
+  "app.current_tenant": req.jwtClaims?.current_tenant || null,
+  "app.current_user": req.jwtClaims?.current_user || null,
+//  role: req.jwtClaims?.role || "anonymous",
+});
+
 // Construct the connection string using environment variables
 const DATABASE_APP_URL = `postgres://${process.env.DATABASE_MIGRATE_USER}:${process.env.DATABASE_MIGRATE_PASSWORD}@postgres:5432/${process.env.APPLICATION_DB}`;
+
 // Add PostGraphile middleware to Express
 app.use(
   postgraphile(
@@ -42,8 +113,18 @@ app.use(
       simpleCollections: 'only',
       exportGqlSchemaPath: '/app/schema/schema.graphql',
       sortExport: true,
+      queryDepthLimit: 7,
       appendPlugins: [PgSimplifyInflectorPlugin],
       enableCors: false, // Disable PostGraphile's built-in CORS handling
+      // jwtTokenIdentifier: 'simplyserved.jwt_token',
+      // jwtSecret: JWT_SECRET,
+      graphileBuildOptions: {
+        pgOmitListSuffix: true, // Omit the "List" suffix from simple collections
+        pgSimplifyPatch: true,          // Use "patch" instead of "userPatch" in updates
+        pgSimplifyAllRows: true,        // Keep "allUsers" instead of simplifying to "users"
+        pgShortPk: false,                 // Add "ById" suffix for primary key queries/mutations
+      },
+      pgSettings: pgSettings
     }
   )
 );

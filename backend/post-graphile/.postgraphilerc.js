@@ -2,12 +2,12 @@ module.exports = {
     options: {
 
         // Graphile build options (default: {})
-        graphileBuildOptions: {
-            pgOmitListSuffix: false, // Omit the "List" suffix from simple collections
-            pgSimplifyPatch: false,          // Use "patch" instead of "userPatch" in updates
-            pgSimplifyAllRows: false,        // Keep "allUsers" instead of simplifying to "users"
-            pgShortPk: false,                 // Add "ById" suffix for primary key queries/mutations
-        },
+        // graphileBuildOptions: {
+        //     pgOmitListSuffix: true, // Omit the "List" suffix from simple collections
+        //     pgSimplifyPatch: true,          // Use "patch" instead of "userPatch" in updates
+        //     pgSimplifyAllRows: true,        // Keep "allUsers" instead of simplifying to "users"
+        //     pgShortPk: false,                 // Add "ById" suffix for primary key queries/mutations
+        // },
         // // Connection string to the database
         // connection: process.env.DATABASE_URL || "postgres://user:password@localhost/dbname",
 

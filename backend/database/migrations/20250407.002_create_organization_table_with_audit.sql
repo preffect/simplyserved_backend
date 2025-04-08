@@ -43,8 +43,9 @@ FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
 -- Grant permissions
-GRANT SELECT, DELETE ON organization TO simplyserved;
-GRANT INSERT, UPDATE (id, name, description) ON organization TO simplyserved;
+GRANT SELECT ON organization TO simplyserved;
+GRANT DELETE ON organization TO simplyserved_org;
+GRANT INSERT, UPDATE (id, name, description) ON organization TO simplyserved_org;
 
 COMMIT;
 -- UP MIGRATION END

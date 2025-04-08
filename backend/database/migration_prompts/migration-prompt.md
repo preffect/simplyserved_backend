@@ -18,27 +18,18 @@ Technical details:
 - Include both "up" migration (changes to apply) and "down" migration (how to roll back)
 - Follow best practices for PostgreSQL schema design
 - Consider performance implications for large datasets
-
-Current database schema includes:
-[DESCRIBE EXISTING TABLES/SCHEMA THAT ARE RELEVANT]
-
-Example usage of this feature:
-[DESCRIBE HOW THIS MIGRATION WILL BE USED IN THE APPLICATION]
-
-Technical details:
-- Database: PostgreSQL 15
-- Migration naming convention: YYYYMMDD.NNN_descriptive_name.sql
-- place the migration file in /backend/database/migrations/
+- Use ROW LEVEL SECURITY based off the organization table and `app.current_tenant` value.
+    - Create a FOR INSERT WITH CHECK policy to ensure tenant ID is set correctly
 - use UUID primary keys
 - all tables should have audit columns (created_at, modified_at, archived_at, created_by, modified_by, archived_by)
-- created_by, modified_by, archived_by fields should be foreign keys to the users table
-- Include both "up" migration (changes to apply) and "down" migration (how to roll back)
-- Follow best practices for PostgreSQL schema design
-- Consider performance implications for large datasets
+   - All tables should have `BEFORE INSERT OR UPDATE` triggers which call the set_audit_fields() function.
+- grant SELECT and DELETE on this table to user simplyserved
+- grant INSERT and UPDATE to all rows on this table except the audit columns to user simplyserved
 - migrations should be placed in ./backend/database/migrations
 
-Migration files should be of the following format. Update migrate.sh to extract the Up migration when applying, and extract the Down migration when rolling back:
+Migration files should be of the following format:
 
+```
 -- Migration: $name
 -- Created at: $(date -u +"%Y-%m-%d %H:%M:%S")
 
@@ -59,54 +50,7 @@ COMMIT;
 
 ```
 
-```
-
-## Example DELETE / IGNORE EVERYTHING BELOW THIS LINE
-
-```
-Create a PostgreSQL migration script to add a users table with authentication capabilities.
-
-The migration should:
-1. Create a users table with fields for email, password hash, and timestamps
-2. Add appropriate indexes for fast lookups
-3. Ensure email is unique
-4. Add a role field with default permissions
-
-Technical details:
-- Database: PostgreSQL 15
-- Migration naming convention: YYYYMMDD.NNN_descriptive_name.sql
-- place the migration file in /backend/database/migrations/
-- use UUID primary keys
-- all tables should have audit columns (created_at, modified_at, archived_at, created_by, modified_by, archived_by)
-- created_by, modified_by, archived_by fields should be foreign keys to the users table
-- Include both "up" migration (changes to apply) and "down" migration (how to roll back)
-- Follow best practices for PostgreSQL schema design
-- Consider performance implications for large datasets
-- migrations should be placed in ./backend/database/migrations
-
-Current database schema includes:
-No existing tables yet, this is the first migration.
-
-Example usage of this feature:
-The users table will be used for authentication and authorization in the application. Users will register with email and password, and the system will store password hashes securely.
-
-Migration files should be of the following format. Update migrate.sh to extract the Up migration when applying, and extract the Down migration when rolling back:
-
--- Migration: $name
--- Created at: $(date -u +"%Y-%m-%d %H:%M:%S")
-
--- Write your migration SQL here
-
--- UP MIGRATION START
--- Add your schema changes here
--- UP MIGRATION END
-
--- DOWN MIGRATION START
--- Add SQL to revert the changes made in the Up migration
--- This section is required for testing and rollbacks
--- DOWN MIGRATION END
-
-```
+## IGNORE EVERYTHING BELOW THIS LINE
 
 ## How to Use This Template
 

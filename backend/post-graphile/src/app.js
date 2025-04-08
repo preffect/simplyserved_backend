@@ -8,12 +8,14 @@ const { corsMiddleware } = require('./corsConfig.js');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Apply CORS middleware
 app.use(corsMiddleware);
 
+app.use(googleAuthMiddleware);
+
 // Secret for signing/verifying JWTs
-const JWT_SECRET = process.env.JWT_SECRET;
 
 
 // const jwt = require("express-jwt");
@@ -43,9 +45,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 //   issuer: `https://YOUR_DOMAIN/`,
 //   algorithms: ["RS256"],
 // });
-
-app.use(googleAuthMiddleware);
-
 const pgSettings = (req) => ({
   "app.current_tenant": req.jwtClaims?.current_tenant || null,
   "app.current_user": req.jwtClaims?.current_user || null,

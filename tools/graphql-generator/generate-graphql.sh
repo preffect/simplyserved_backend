@@ -5,6 +5,7 @@ set -e
 SCHEMA_PATH="./schema.graphql"
 OUTPUT_DIR="./src/app/graphql"
 MODE=""
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Function to display usage
 usage() {
@@ -77,6 +78,14 @@ OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 echo "Running GraphQL generator with mode: $MODE"
 echo "Schema: $SCHEMA_PATH"
 echo "Output directory: $OUTPUT_DIR"
+
+# Check if the Docker image exists, build it if it doesn't
+if ! docker image inspect graphql-generator >/dev/null 2>&1; then
+  echo "Docker image 'graphql-generator' not found. Building it now..."
+  cd "$SCRIPT_DIR"
+  docker build -t graphql-generator .
+  cd - >/dev/null
+fi
 
 # Run the Docker container
 docker run --rm \

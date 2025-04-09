@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Load environment variables from .env file
-if [ -f "./backend/.env" ]; then
-  source ./backend/.env
+if [ -f "./.env" ]; then
+  source ./.env
 else
   echo "Error: .env file not found"
   exit 1

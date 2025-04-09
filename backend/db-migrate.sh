@@ -52,11 +52,11 @@ fi
 
 # Check if any files in the db-migrator directory have changed since last build
 LAST_BUILD_TIME=$(stat -c %Y "$LAST_BUILD_FILE" 2>/dev/null || echo 0)
-LATEST_CHANGE=$(find ./backend/db-migrator -type f -exec stat -c %Y {} \; | sort -nr | head -n 1 2>/dev/null || echo 0)
+LATEST_CHANGE=$(find ./db-migrator -type f -exec stat -c %Y {} \; | sort -nr | head -n 1 2>/dev/null || echo 0)
 
 # Check specific files by hash
-DOCKERFILE_PATH="./backend/db-migrator/Dockerfile"
-MIGRATOR_SCRIPT_PATH="./backend/db-migrator/scripts/migrator.sh"
+DOCKERFILE_PATH="./db-migrator/Dockerfile"
+MIGRATOR_SCRIPT_PATH="./db-migrator/scripts/migrator.sh"
 
 # Function to calculate file hash
 calculate_hash() {

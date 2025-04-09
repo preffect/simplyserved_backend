@@ -12,8 +12,8 @@ ORG_NAME="$1"
 ORG_DESCRIPTION="${2:-}"  # Use empty string if description not provided
 
 # Load environment variables from .env file
-if [ -f "./backend/.env" ]; then
-    source ./backend/.env
+if [ -f "./.env" ]; then
+    source ./.env
 else
     echo "Error: .env file not found in backend directory"
     exit 1
@@ -39,16 +39,19 @@ if ! docker ps | grep -q postgres; then
     echo "PostgreSQL is ready!"
 fi
 
+
+SQL_COMMAND="SET jwt.claims.current_tenant_id = 'some-tenant-id';"
+SQL_COMMAND="$SQL_COMMAND SET jwt.claims.current_user_id = 'some-user-id';"
 # Create SQL command to insert organization
 if [ -z "$ORG_DESCRIPTION" ]; then
-    SQL_COMMAND="INSERT INTO organization (name) VALUES ('$ORG_NAME') RETURNING id;"
+    SQL_COMMAND="$SQL_COMMAND INSERT INTO organization (name) VALUES ('$ORG_NAME') RETURNING id;"
 else
-    SQL_COMMAND="INSERT INTO organization (name, description) VALUES ('$ORG_NAME', '$ORG_DESCRIPTION') RETURNING id;"
+    SQL_COMMAND="$SQL_COMMAND INSERT INTO organization (name, description) VALUES ('$ORG_NAME', '$ORG_DESCRIPTION') RETURNING id;"
 fi
 
 # Execute SQL command in postgres container
 echo "Creating organization '$ORG_NAME'..."
-ORG_ID=$(docker compose exec -T postgres psql -U "$DATABASE_ORG_CREATE_USER" -d "$APPLICATION_DB" -t -c "$SQL_COMMAND" | tr -d '[:space:]')
+ORG_ID=$(docker compose exec -T postgres psql -U "$DATABASE_MIGRATE_USER" -d "$APPLICATION_DB" -t -c "$SQL_COMMAND" | tr -d '[:space:]')
 
 if [ -z "$ORG_ID" ]; then
     echo "Error: Failed to create organization"

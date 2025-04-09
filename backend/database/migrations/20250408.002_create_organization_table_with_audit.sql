@@ -30,8 +30,8 @@ FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
 -- Set the current tenant and user IDs in the JWT claims for creating the system tenant
-SET LOCAL jwt.claims.current_tenant_id = system_tenant_id();
-SET LOCAL jwt.claims.current_user_id = system_user_id();
+SET LOCAL jwt.claims.current_tenant_id = system_tenant_id;
+SET LOCAL jwt.claims.current_user_id = system_user_id;
 
 INSERT INTO organization (id, name, description, created_at, modified_at, archived_at )
 VALUES
@@ -52,10 +52,10 @@ ALTER TABLE organization ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for organization access
 CREATE POLICY organization_tenant_isolation_policy ON organization
-  USING (id = current_tenant_id() OR id = system_tenant_id());
+  USING (id = current_tenant_id());
 
 -- Allow system user to bypass RLS
-ALTER TABLE organization FORCE ROW LEVEL SECURITY;
+-- ALTER TABLE organization FORCE ROW LEVEL SECURITY;
 
 
 COMMIT;
@@ -71,6 +71,7 @@ DROP TABLE IF EXISTS organization CASCADE;
 -- Drop the audit function if no other tables are using it
 -- Note: In a real scenario, you might want to check if other tables use this function
 DROP TRIGGER IF EXISTS set_organization_audit_fields ON organization;
+DROP FUNCTION IF EXISTS current_tenant_id;
 
 COMMIT;
 -- DOWN MIGRATION END

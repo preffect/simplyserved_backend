@@ -42,9 +42,20 @@ GRANT SELECT ON organization TO simplyserved;
 GRANT DELETE ON organization TO simplyserved_org;
 GRANT INSERT, UPDATE (id, name, description) ON organization TO simplyserved_org;
 
+-- Create function to get current tenant ID from JWT claims
 CREATE FUNCTION current_tenant_id() RETURNS UUID AS $$
-  SELECT u.organization_id FROM user u WHERE u.id = nullif(current_setting('jwt.claims.current_tenant_id', true), '')::uuid;
+  SELECT nullif(current_setting('jwt.claims.current_tenant_id', true), '')::uuid;
 $$ LANGUAGE SQL stable;
+
+-- Enable row level security
+ALTER TABLE organization ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for organization access
+CREATE POLICY organization_tenant_isolation_policy ON organization
+  USING (id = current_tenant_id() OR id = system_tenant_id());
+
+-- Allow system user to bypass RLS
+ALTER TABLE organization FORCE ROW LEVEL SECURITY;
 
 
 COMMIT;

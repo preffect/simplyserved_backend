@@ -41,6 +41,8 @@ print_usage() {
     echo "  test                 Test migrations in sandbox and report results"
     echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
     echo "  init                 Initialize sandbox database, and the migrations table in the application database and the sandbox database"
+    echo "  apply-sandbox        Apply the next pending migration to the sandbox database"
+    echo "  rollback-sandbox     Roll back the last applied migration in the sandbox database"
     echo "  help                 Show this help message"
 }
 
@@ -360,6 +362,76 @@ apply_all_migrations_to_sandbox() {
     fi
 }
 
+# Function to apply the next pending migration to the sandbox database
+apply_next_migration_to_sandbox() {
+    # Get list of all migration files
+    local all_migrations=($(ls -1 ${MIGRATIONS_DIR}/*.sql 2>/dev/null | sort))
+    
+    if [ ${#all_migrations[@]} -eq 0 ]; then
+        echo -e "${INFO} No migration files found in ${MIGRATIONS_DIR}"
+        return 0
+    fi
+    
+    # Get list of applied migrations from sandbox database
+    local sandbox_applied_migrations=$(psql ${PG_CONN} -d "${SANDBOX_DB}" -t -c "SELECT filename FROM ${SANDBOX_MIGRATIONS_TABLE} ORDER BY id;")
+    
+    local next_migration=""
+    
+    for migration in "${all_migrations[@]}"; do
+        local filename=$(basename "${migration}")
+        if ! echo "${sandbox_applied_migrations}" | grep -q "${filename}"; then
+            next_migration="${migration}"
+            break
+        fi
+    done
+    
+    if [ -z "${next_migration}" ]; then
+        echo -e "${INFO} No pending migrations to apply to sandbox"
+        return 0
+    fi
+    
+    local filename=$(basename "${next_migration}")
+    echo -e "${INFO} Applying next migration to sandbox: ${filename}"
+    
+    if apply_migration_to_sandbox "${next_migration}"; then
+        echo -e "${SUCCESS} Migration ${filename} applied to sandbox database"
+        return 0
+    else
+        echo -e "${FAILURE} Failed to apply migration ${filename} to sandbox database"
+        return 1
+    fi
+}
+
+# Function to rollback the last migration in the sandbox database
+rollback_last_sandbox_migration() {
+    # Get the last applied migration from the sandbox database
+    local last_migration=$(psql ${PG_CONN} -d "${SANDBOX_DB}" -t -c "SELECT filename FROM ${SANDBOX_MIGRATIONS_TABLE} ORDER BY id DESC LIMIT 1;")
+    last_migration=$(echo "${last_migration}" | tr -d '[:space:]')
+    
+    if [ -z "${last_migration}" ]; then
+        echo -e "${INFO} No migrations to roll back in sandbox"
+        return 0
+    fi
+    
+    echo -e "${INFO} Rolling back migration in sandbox: ${last_migration}"
+    
+    # Find the migration file
+    local migration_file="${MIGRATIONS_DIR}/${last_migration}"
+    
+    if [ ! -f "${migration_file}" ]; then
+        echo -e "${FAILURE} Migration file not found: ${migration_file}"
+        return 1
+    fi
+    
+    if rollback_migration_in_sandbox "${migration_file}"; then
+        echo -e "${SUCCESS} Migration ${last_migration} rolled back successfully in sandbox"
+        return 0
+    else
+        echo -e "${FAILURE} Failed to roll back migration ${last_migration} in sandbox"
+        return 1
+    fi
+}
+
 # Function to rollback the last migration in the application database
 rollback_last_migration() {
     # Get the last applied migration from the application database
@@ -568,6 +640,12 @@ case "$1" in
         ;;
     init)
         init_migrations
+        ;;
+    apply-sandbox)
+        apply_next_migration_to_sandbox
+        ;;
+    rollback-sandbox)
+        rollback_last_sandbox_migration
         ;;
     help|--help|-h)
         print_usage

@@ -28,6 +28,8 @@ if [ $# -eq 0 ]; then
     echo "  test                 Test migrations in sandbox and report results"
     echo "  rebuild-sandbox      Recreate sandbox database with all migrations"
     echo "  init                 Initialize sandbox database, and the migrations table in the application database and the sandbox database"
+    echo "  apply-sandbox        Apply the next pending migration to the sandbox database"
+    echo "  rollback-sandbox     Roll back the last applied migration in the sandbox database"
     echo "  help                 Show this help message"
     exit 1
 fi

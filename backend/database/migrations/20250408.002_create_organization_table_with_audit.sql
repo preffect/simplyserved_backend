@@ -1,25 +1,12 @@
 -- Migration: create_organization_table_with_audit
--- Created at: 2025-04-07 00:00:00
+-- Created at: 2025-04-08 00:00:00
 
 -- Write your migration SQL here
 
 -- UP MIGRATION START
 BEGIN;
 
--- Create a trigger function to set audit fields
-CREATE OR REPLACE FUNCTION set_audit_fields()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Set created_at to NOW() if this is a new record
-    IF TG_OP = 'INSERT' THEN
-        NEW.created_at = NOW();
-        NEW.created_by = current_setting('app.current_user', true);
-    END IF;
-    NEW.modified_at = NOW();
-    NEW.modified_by = current_setting('app.current_user', true);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Create organization table
 CREATE TABLE organization (
@@ -42,23 +29,37 @@ BEFORE INSERT OR UPDATE ON organization
 FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
+-- Set the current tenant and user IDs in the JWT claims for creating the system tenant
+SET LOCAL jwt.claims.current_tenant_id = system_tenant_id();
+SET LOCAL jwt.claims.current_user_id = system_user_id();
+
+INSERT INTO organization (id, name, description, created_at, modified_at, archived_at )
+VALUES
+    (system_tenant_id(), 'SYSTEM TENANT', 'SYSTEM TENANT', NOW(), NOW(), NULL );
+
 -- Grant permissions
 GRANT SELECT ON organization TO simplyserved;
 GRANT DELETE ON organization TO simplyserved_org;
 GRANT INSERT, UPDATE (id, name, description) ON organization TO simplyserved_org;
 
+CREATE FUNCTION current_tenant_id() RETURNS UUID AS $$
+  SELECT u.organization_id FROM user u WHERE u.id = nullif(current_setting('jwt.claims.current_tenant_id', true), '')::uuid;
+$$ LANGUAGE SQL stable;
+
+
 COMMIT;
 -- UP MIGRATION END
 
 -- DOWN MIGRATION START
+
 BEGIN;
 
 -- Drop the organization table
-DROP TABLE IF EXISTS organization;
+DROP TABLE IF EXISTS organization CASCADE;
 
 -- Drop the audit function if no other tables are using it
 -- Note: In a real scenario, you might want to check if other tables use this function
-DROP FUNCTION IF EXISTS set_audit_fields();
+DROP TRIGGER IF EXISTS set_organization_audit_fields ON organization;
 
 COMMIT;
 -- DOWN MIGRATION END

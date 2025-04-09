@@ -110,10 +110,6 @@ rebuild_sandbox() {
         date timestamptz NOT NULL DEFAULT now()
     );"
     
-    # Apply all migrations to the sandbox database
-    echo -e "${INFO} Applying all migrations to sandbox database"
-    apply_all_migrations_to_sandbox
-    
     echo -e "${SUCCESS} Sandbox database rebuilt successfully"
 }
 

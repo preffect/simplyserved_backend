@@ -35,7 +35,7 @@ async function handleTokenExchange(req, res) {
     
     // Query the database for the user by email
     const result = await pool.query(
-      'SELECT id, email FROM users WHERE email = $1',
+      'SELECT id, organization_id, email FROM users WHERE email = $1',
       [googlePayload.email]
     );
     
@@ -48,11 +48,12 @@ async function handleTokenExchange(req, res) {
     // Create a custom JWT
     const customToken = jwt.sign(
       { 
-        current_user: user.id,
-        email: user.email,
+        aud: "postgraphile",
         sub: googlePayload.sub,
         name: googlePayload.name,
-        aud: "postgraphile"
+        curent_user_id: user.id,
+        current_organization_id: user.organization_id,
+        email: user.email
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }

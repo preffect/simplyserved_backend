@@ -35,19 +35,57 @@ fi
 # Check if db-migrator needs to be rebuilt
 REBUILD_NEEDED=false
 LAST_BUILD_FILE=".db_migrator_last_build"
+HASH_FILE=".db_migrator_hashes"
 
-# Create the file if it doesn't exist
+# Create the files if they don't exist
 if [ ! -f "$LAST_BUILD_FILE" ]; then
     touch "$LAST_BUILD_FILE"
     REBUILD_NEEDED=true
 fi
 
+if [ ! -f "$HASH_FILE" ]; then
+    touch "$HASH_FILE"
+    REBUILD_NEEDED=true
+fi
+
 # Check if any files in the db-migrator directory have changed since last build
 LAST_BUILD_TIME=$(stat -c %Y "$LAST_BUILD_FILE" 2>/dev/null || echo 0)
-LATEST_CHANGE=$(find ./backend/db-migrator -type f -exec stat -c %Y {} \; | sort -nr | head -n 1)
+LATEST_CHANGE=$(find ./backend/db-migrator -type f -exec stat -c %Y {} \; | sort -nr | head -n 1 2>/dev/null || echo 0)
+
+# Check specific files by hash
+DOCKERFILE_PATH="./backend/db-migrator/Dockerfile"
+MIGRATOR_SCRIPT_PATH="./backend/db-migrator/scripts/migrator.sh"
+
+# Function to calculate file hash
+calculate_hash() {
+    if [ -f "$1" ]; then
+        md5sum "$1" | awk '{print $1}'
+    else
+        echo "file_not_found"
+    fi
+}
+
+# Calculate current hashes
+CURRENT_DOCKERFILE_HASH=$(calculate_hash "$DOCKERFILE_PATH")
+CURRENT_MIGRATOR_HASH=$(calculate_hash "$MIGRATOR_SCRIPT_PATH")
+
+# Read previous hashes
+PREV_DOCKERFILE_HASH=$(grep "^dockerfile:" "$HASH_FILE" 2>/dev/null | cut -d':' -f2 || echo "")
+PREV_MIGRATOR_HASH=$(grep "^migrator:" "$HASH_FILE" 2>/dev/null | cut -d':' -f2 || echo "")
+
+# Check if hashes have changed
+if [ "$CURRENT_DOCKERFILE_HASH" != "$PREV_DOCKERFILE_HASH" ] && [ "$CURRENT_DOCKERFILE_HASH" != "file_not_found" ]; then
+    echo -e "${INFO} Changes detected in Dockerfile. Rebuilding container..."
+    REBUILD_NEEDED=true
+fi
+
+if [ "$CURRENT_MIGRATOR_HASH" != "$PREV_MIGRATOR_HASH" ] && [ "$CURRENT_MIGRATOR_HASH" != "file_not_found" ]; then
+    echo -e "${INFO} Changes detected in migrator.sh script. Rebuilding container..."
+    REBUILD_NEEDED=true
+fi
 
 if [ "$LATEST_CHANGE" -gt "$LAST_BUILD_TIME" ]; then
-    echo -e "${INFO} Changes detected in db-migrator files. Rebuilding container..."
+    echo -e "${INFO} Changes detected in other db-migrator files. Rebuilding container..."
     REBUILD_NEEDED=true
 fi
 
@@ -55,6 +93,12 @@ fi
 if [ "$REBUILD_NEEDED" = true ]; then
     echo -e "${INFO} Building db-migrator container..."
     docker compose build db-migrator
+    
+    # Update the hash file with new hashes
+    echo "dockerfile:$CURRENT_DOCKERFILE_HASH" > "$HASH_FILE"
+    echo "migrator:$CURRENT_MIGRATOR_HASH" >> "$HASH_FILE"
+    
+    # Update the last build timestamp
     touch "$LAST_BUILD_FILE"
 fi
 

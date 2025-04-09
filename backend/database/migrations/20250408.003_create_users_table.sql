@@ -59,11 +59,28 @@ BEFORE INSERT OR UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
+-- Enable row level security
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for organization-based access
+CREATE POLICY users_organization_isolation_policy ON users
+    USING (organization_id = NULLIF(current_setting('app.current_tenant', TRUE), '')::UUID);
+
+-- Grant permissions to roles
+GRANT SELECT, INSERT, UPDATE ON users TO authenticated;
+GRANT USAGE ON SEQUENCE users_id_seq TO authenticated;
+
 -- UP MIGRATION END
 
 -- DOWN MIGRATION START
 -- Drop the trigger first
 DROP TRIGGER IF EXISTS set_user_audit_fields ON users;
+
+-- Drop policies
+DROP POLICY IF EXISTS users_organization_isolation_policy ON users;
+
+-- Disable RLS
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 
 -- Drop the table (this will also drop the constraints and indexes)
 DROP TABLE IF EXISTS users CASCADE;

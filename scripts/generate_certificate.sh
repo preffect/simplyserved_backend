@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Script to generate Let's Encrypt SSL certificate for simplyserved.app
-# Certificates will be stored in /home/azureuser/source/local/certs/
+# Certificates will be stored in ./local/certs/
 
 set -e
 
 DOMAIN="simplyserved.app"
 EMAIL="admin@simplyserved.app"  # Replace with your email
-CERT_DIR="/home/azureuser/source/local/certs"
+CERT_DIR="./local/certs"
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then

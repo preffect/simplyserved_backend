@@ -1,0 +1,44 @@
+Create a dockerized tool for generating graphql document files for client side code generation.
+Create a helper bash script that runs the container passing in flags to execute the appropriate generation method
+
+Place this dokerized tool under tools/graphql-generator/ 
+THIS IS A TOOL. DONT INCLUDE IT IN THE docker-compose file
+
+Option 1:
+-i --introspect method:
+ requires --schema default schema.graphql
+
+npm install graphql
+npm install -D @graphql-codegen/cli
+
+npx graphql-codegen introspect-schema --schema {schema} --output ./schema.json
+
+Option 2:
+-o --operations 
+
+npm install graphql
+npm install -D typescript
+npm install -D @graphql-codegen/cli
+npm install -D @graphql-codegen/typescript
+npm install -D @graphql-codegen/typescript-operations
+npm install -D @graphql-codegen/typescript-apollo-angular
+npm install -D @graphql-codegen/schema-ast
+
+Modify your codegen.yml to include the schema-ast plugin:
+```￼
+overwrite: true
+schema: "./schema.graphql"
+generates:
+  ./src/app/graphql/generated.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-apollo-angular"
+  ./src/app/graphql/all-operations.graphql:
+    plugins:
+      - "schema-ast"
+    config:
+      includeDirectives: false # Optional: Exclude directives if not needed
+```
+npx graphql-codegen --config codegen.yml
+ 

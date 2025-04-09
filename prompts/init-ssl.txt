@@ -1,0 +1,8 @@
+/add backend/post-graphile/src
+
+create a script /scripts/generate_certificate.sh that uses letsencrypt to create a certificate for simplyserved.app. 
+this script should check if all dependencies are installed, and provide instructions on how to install on ubuntu if they are not.  
+
+The cert should be stored under /local/certs/
+
+Add a new tls module which app.js will load similar to the corsConfig.js. This module should enable ssl using the generated certificate

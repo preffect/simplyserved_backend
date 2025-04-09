@@ -35,7 +35,7 @@ async function handleTokenExchange(req, res) {
     
     // Query the database for the user by email
     const result = await pool.query(
-      'SELECT id, email FROM public.user WHERE email = $1',
+      'SELECT id, email FROM users WHERE email = $1',
       [googlePayload.email]
     );
     
@@ -51,7 +51,8 @@ async function handleTokenExchange(req, res) {
         current_user: user.id,
         email: user.email,
         sub: googlePayload.sub,
-        name: googlePayload.name
+        name: googlePayload.name,
+        aud: "postgraphile"
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }

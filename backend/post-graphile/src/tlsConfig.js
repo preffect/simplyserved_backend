@@ -10,15 +10,15 @@ const https = require('https');
  */
 function configureTLS(app, port) {
   // Default certificate paths
-  const certPath = process.env.CERT_PATH || '/home/azureuser/source/local/certs/fullchain.pem';
-  const keyPath = process.env.KEY_PATH || '/home/azureuser/source/local/certs/privkey.pem';
+  const certPath = process.env.CERT_PATH || './local/certs/fullchain.pem';
+  const keyPath = process.env.KEY_PATH || './local/certs/privkey.pem';
   
   // Check if certificates exist
   try {
     if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
       console.warn('SSL certificates not found. Server will run in HTTP mode.');
       console.warn(`Expected certificates at: ${certPath} and ${keyPath}`);
-      console.warn('Run /home/azureuser/source/backend/scripts/generate_certificate.sh to create certificates.');
+      console.warn('Run ./scripts/generate_certificate.sh to create certificates.');
       
       // Start server without TLS
       return app.listen(port, '0.0.0.0', () => {

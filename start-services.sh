@@ -1,6 +1,32 @@
 #!/bin/bash
 set -e
 
+# Default API service
+API_SERVICE="postgraphile"
+
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --api)
+      API_SERVICE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--api postgraphile|postgrest]"
+      exit 1
+      ;;
+  esac
+done
+
+# Validate API service selection
+if [[ "$API_SERVICE" != "postgraphile" && "$API_SERVICE" != "postgrest" ]]; then
+  echo "Invalid API service: $API_SERVICE"
+  echo "Valid options are: postgraphile, postgrest"
+  exit 1
+fi
+
+echo "Selected API service: $API_SERVICE"
 
 # Function to check if build is needed
 need_rebuild() {
@@ -31,8 +57,12 @@ if need_rebuild "backend_postgres" "./backend/database/Dockerfile"; then
     REBUILD="$REBUILD postgres"
 fi
 
-if need_rebuild "backend_postgraphile" "./backend/post-graphile/Dockerfile"; then
+if [[ "$API_SERVICE" == "postgraphile" ]] && need_rebuild "backend_postgraphile" "./backend/post-graphile/Dockerfile"; then
     REBUILD="$REBUILD postgraphile"
+fi
+
+if [[ "$API_SERVICE" == "postgrest" ]] && need_rebuild "backend_postgrest" "./backend/postgrest/Dockerfile"; then
+    REBUILD="$REBUILD postgrest"
 fi
 
 # Rebuild services if needed
@@ -41,10 +71,14 @@ if [ -n "$REBUILD" ]; then
     docker compose build $REBUILD
 fi
 
-# Start all services
-echo "Starting all services..."
-docker compose up
+# Start services
+echo "Starting services with $API_SERVICE..."
+docker compose up postgres db-migrator $API_SERVICE
 
 echo "All services are running!"
 echo "PostgreSQL: localhost:5432"
-echo "GraphQL API: localhost:5000/graphql"
+if [[ "$API_SERVICE" == "postgraphile" ]]; then
+    echo "GraphQL API: localhost:5000/graphql"
+else
+    echo "REST API: localhost:3000"
+fi

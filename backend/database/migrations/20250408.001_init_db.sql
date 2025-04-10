@@ -9,7 +9,7 @@ BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE FUNCTION system_tenant_id() RETURNS UUID AS $$
+CREATE FUNCTION system_organization_id() RETURNS UUID AS $$
   SELECT 'dfdb8f1c-14e7-11f0-952a-7c1e52225885'::UUID;
 $$ LANGUAGE SQL stable;
 
@@ -29,7 +29,7 @@ BEGIN
     IF tg_op = 'insert' THEN
         new.created_at = now();
         new.created_by = current_setting('app.current_user_id', true);
-        new.organization_id = current_setting('app.current_tenant_id', true);
+        new.organization_id = current_setting('app.current_organization_id', true);
     END IF;
     new.modified_at = now();
     new.modified_by = current_setting('app.current_user_id', true);
@@ -46,9 +46,9 @@ BEGIN;
 -- drop the audit function if no other tables are using it
 -- note: in a real scenario, you might want to check if other tables use this function
 DROP FUNCTION IF EXISTS set_audit_fields;
-DROP FUNCTION IF EXISTS system_tenant_id;
+DROP FUNCTION IF EXISTS system_organization_id;
 DROP FUNCTION IF EXISTS system_user_id;
-DROP FUNCTION IF EXISTS current_tenant_id;
+DROP FUNCTION IF EXISTS current_organization_id;
 DROP FUNCTION IF EXISTS current_user_id;
 
 COMMIT;

@@ -35,7 +35,7 @@ async function handleTokenExchange(req, res) {
     
     // Query the database for the user by email
     const result = await pool.query(
-      'SELECT id, organization_id, email FROM users WHERE email = $1',
+      'SELECT id, organization_id, email FROM app_user WHERE email = $1',
       [googlePayload.email]
     );
     

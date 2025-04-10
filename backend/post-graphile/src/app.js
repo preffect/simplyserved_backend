@@ -17,14 +17,8 @@ app.use(corsMiddleware);
 // Token exchange endpoint with Google Auth middleware
 app.post('/token-exchange', googleAuthMiddleware, express.json(), handleTokenExchange);
 
-const pgSettings = (req) => ({
-  "app.current_tenant": req.jwtClaims?.current_tenant || null,
-  "app.current_user": req.jwtClaims?.current_user || null,
-//  role: req.jwtClaims?.role || "anonymous",
-});
-
 // Construct the connection string using environment variables
-const DATABASE_APP_URL = `postgres://${process.env.DATABASE_MIGRATE_USER}:${process.env.DATABASE_MIGRATE_PASSWORD}@postgres:5432/${process.env.APPLICATION_DB}`;
+const DATABASE_APP_URL = `postgres://${process.env.DATABASE_APP_USER}:${process.env.DATABASE_APP_PASSWORD}@postgres:5432/${process.env.APPLICATION_DB}`;
 
 // Add PostGraphile middleware to Express
 app.use(
@@ -42,15 +36,14 @@ app.use(
       queryDepthLimit: 7,
       appendPlugins: [PgSimplifyInflectorPlugin],
       enableCors: false, // Disable PostGraphile's built-in CORS handling
-      // jwtTokenIdentifier: 'simplyserved.jwt_token',
-      // jwtSecret: JWT_SECRET,
+      jwtTokenIdentifier: 'simplyserved.jwt_token',
+      jwtSecret: JWT_SECRET,
       graphileBuildOptions: {
         pgOmitListSuffix: true, // Omit the "List" suffix from simple collections
         pgSimplifyPatch: true,          // Use "patch" instead of "userPatch" in updates
         pgSimplifyAllRows: true,        // Keep "allUsers" instead of simplifying to "users"
         pgShortPk: false,                 // Add "ById" suffix for primary key queries/mutations
-      },
-      pgSettings: pgSettings
+      }
     }
   )
 );

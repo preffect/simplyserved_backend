@@ -2,8 +2,8 @@ const cors = require('cors');
 
 // Configure CORS for specific origin
 const corsOptions = {
-  origin: 'http://localhost:5001',
-  methods: ['GET', 'POST', 'HEAD'],
+  origin: ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:5001'],
+  methods: ['GET', 'POST', 'HEAD', 'OPTIONS'],
   allowedHeaders: [
     'Origin',
     'X-Requested-With',
@@ -12,6 +12,7 @@ const corsOptions = {
     'Content-Type',
     'Content-Length',
   ],
+  credentials: true,
   exposedHeaders: ['']
 };
 

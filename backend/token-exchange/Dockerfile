@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install PostgreSQL client for wait-for-postgres script
+RUN apk add --no-cache postgresql-client
+
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
@@ -15,8 +18,9 @@ COPY wait-for-postgres.sh ./
 RUN mkdir -p ./local/certs
 COPY local/certs/ ./local/certs/
 
-# Make entrypoint executable
+# Make scripts executable
 RUN chmod +x ./entrypoint.sh
+RUN chmod +x ./wait-for-postgres.sh
 
 EXPOSE 5001
 

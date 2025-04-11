@@ -6,4 +6,4 @@
 echo "PostgreSQL is up - starting token-exchange service"
 
 # Start the application
-npm start
+node src/app.js

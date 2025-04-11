@@ -8,8 +8,9 @@ const { configureTLS } = require('./tlsConfig.js');
 const app = express();
 const PORT = process.env.TOKEN_EXCHANGE_PORT || 5001;
 
+console.log("HERE")
 // Apply CORS middleware
-app.use(corsMiddleware);
+//app.use(corsMiddleware);
 
 // Add health check endpoint
 app.get('/health', (req, res) => {
@@ -20,4 +21,4 @@ app.get('/health', (req, res) => {
 app.post('/token-exchange', googleAuthMiddleware, express.json(), handleTokenExchange);
 
 // Start the server with TLS if certificates are available
-configureTLS(app, PORT);
+//configureTLS(app, PORT);

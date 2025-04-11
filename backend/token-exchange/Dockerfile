@@ -9,6 +9,7 @@ RUN npm install
 # Copy application code
 COPY src/ ./src/
 COPY entrypoint.sh ./
+COPY wait-for-postgres.sh ./
 
 # Create directory for certificates
 RUN mkdir -p ./local/certs

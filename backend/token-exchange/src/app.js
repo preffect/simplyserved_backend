@@ -6,10 +6,15 @@ const { configureTLS } = require('./tlsConfig.js');
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.TOKEN_EXCHANGE_PORT || 5001;
 
 // Apply CORS middleware
 app.use(corsMiddleware);
+
+// Add health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // Token exchange endpoint with Google Auth middleware
 app.post('/token-exchange', googleAuthMiddleware, express.json(), handleTokenExchange);

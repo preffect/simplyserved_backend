@@ -24,6 +24,10 @@ CREATE TABLE app_user (
     archived_by UUID
 );
 
+CREATE COMMENT ON TABLE app_user IS 
+    $$This table to store user information for the SimplyServed application and
+    is also used for authentication and authorization purposes.$$
+
 -- Insert system user
 INSERT INTO app_user (id, organization_id, email, password_hash, role, created_at, modified_at, archived_at, created_by, modified_by, archived_by)
 VALUES (system_user_id(), system_organization_id(), 'system-user@simplyserved.app',

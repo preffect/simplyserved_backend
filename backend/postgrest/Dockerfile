@@ -1,9 +1,10 @@
-FROM postgrest/postgrest:latest
+FROM alpine:latest
+COPY --from=postgrest/postgrest /bin/postgrest /bin
 
 WORKDIR /app
 
 # Install PostgreSQL client for health check
-RUN apt-get update && apt-get install -y postgresql-client wget && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache postgresql-client wget
 
 COPY ./wait-for-postgres.sh /app/wait-for-postgres.sh
 COPY ./entrypoint.sh /app/entrypoint.sh

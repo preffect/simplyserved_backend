@@ -23,6 +23,10 @@ CREATE TABLE organization (
     archived_by TEXT
 );
 
+CREATE COMMENT ON TABEL organization IS
+  $$This table stores top level end-user organization information and
+  is also used as the tenant for multi-tenancy.$$;
+
 -- Create trigger for audit fields
 CREATE TRIGGER set_organization_audit_fields
 BEFORE INSERT OR UPDATE ON organization

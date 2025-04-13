@@ -57,6 +57,10 @@ if need_rebuild "backend_postgres" "./backend/database/Dockerfile"; then
     REBUILD="$REBUILD postgres"
 fi
 
+if need_rebuild "backend_token_exchange" "./backend/token-exchange/Dockerfile"; then
+    REBUILD="$REBUILD token-exchange"
+fi
+
 if [[ "$API_SERVICE" == "postgraphile" ]] && need_rebuild "backend_postgraphile" "./backend/post-graphile/Dockerfile"; then
     REBUILD="$REBUILD postgraphile"
 fi

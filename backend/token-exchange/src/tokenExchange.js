@@ -51,6 +51,7 @@ async function handleTokenExchange(req, res) {
         aud: "postgraphile",
         sub: googlePayload.sub,
         name: googlePayload.name,
+        role: "simplyserved",
         curent_user_id: user.id,
         current_organization_id: user.organization_id,
         email: user.email

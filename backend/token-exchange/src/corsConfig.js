@@ -2,7 +2,14 @@ const cors = require('cors');
 
 // Configure CORS for specific origin
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:5000', 'http://localhost:5001'],
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'https://simplyserved.app:5001',
+    'http://conan-devbox3.westus3.cloudapp.azure.com:3000',
+    'http://conan-devbox3.westus3.cloudapp.azure.com',
+    'https://simplyserved.app'
+  ],
   methods: ['GET', 'POST', 'HEAD', 'OPTIONS'],
   allowedHeaders: [
     'Origin',

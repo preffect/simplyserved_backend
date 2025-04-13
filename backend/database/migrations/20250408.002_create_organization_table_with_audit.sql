@@ -34,8 +34,8 @@ FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
 -- Set the current tenant and user IDs in the JWT claims for creating the system tenant
-SET LOCAL jwt.claims.current_organization_id = system_organization_id;
-SET LOCAL jwt.claims.current_user_id = system_user_id;
+SET LOCAL request.jwt.claims.current_organization_id = system_organization_id;
+SET LOCAL request.jwt.claims.current_user_id = system_user_id;
 
 INSERT INTO organization (id, name, description, created_at, modified_at, archived_at )
 VALUES
@@ -47,8 +47,8 @@ GRANT DELETE ON organization TO simplyserved_org;
 GRANT INSERT, UPDATE (id, name, description) ON organization TO simplyserved_org;
 
 -- Create function to get current organization ID from JWT claims
-CREATE FUNCTION current_organization_id() RETURNS UUID AS $$
-  SELECT nullif(current_setting('jwt.claims.current_organization_id', true), '')::uuid;
+CREATE OR REPLACE FUNCTION current_organization_id() RETURNS UUID AS $$
+  SELECT nullif(current_setting('request.jwt.claims', true)::json->>'current_organization_id', '')::uuid;
 $$ LANGUAGE SQL stable;
 
 -- Enable row level security
@@ -60,7 +60,6 @@ CREATE POLICY organization_tenant_isolation_policy ON organization
 
 -- Allow system user to bypass RLS
 -- ALTER TABLE organization FORCE ROW LEVEL SECURITY;
-
 
 COMMIT;
 -- UP MIGRATION END
@@ -75,6 +74,7 @@ DROP TABLE IF EXISTS organization CASCADE;
 -- Drop the audit function if no other tables are using it
 -- Note: In a real scenario, you might want to check if other tables use this function
 DROP TRIGGER IF EXISTS set_organization_audit_fields ON organization;
+DROP POLICY IF EXISTS organization_tenant_isolation_policy ON organization;
 DROP FUNCTION IF EXISTS current_organization_id;
 
 COMMIT;

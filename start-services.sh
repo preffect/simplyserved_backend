@@ -2,7 +2,7 @@
 set -e
 
 # Default API service
-API_SERVICE="postgraphile"
+API_SERVICE="postgrest"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -73,7 +73,7 @@ fi
 
 # Start services
 echo "Starting services with $API_SERVICE..."
-docker compose up postgres db-migrator $API_SERVICE
+docker compose up token-exchange postgres db-migrator $API_SERVICE
 
 echo "All services are running!"
 echo "PostgreSQL: localhost:5432"

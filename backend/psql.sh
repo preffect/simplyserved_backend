@@ -9,6 +9,6 @@ else
 fi
 
 # Connect to PostgreSQL using the migrate user
-PGPASSWORD=$DATABASE_MIGRATE_PASSWORD docker exec -it $(docker ps -qf "name=postgres") psql -U $DATABASE_MIGRATE_USER -d $APPLICATION_DB
+PGPASSWORD=$DATABASE_MIGRATE_PASSWORD docker exec -it $(docker ps -qf "name=backend-postgres-1$") psql -U $DATABASE_MIGRATE_USER -d $APPLICATION_DB
 
 echo "Connected to PostgreSQL as $DATABASE_MIGRATE_USER"

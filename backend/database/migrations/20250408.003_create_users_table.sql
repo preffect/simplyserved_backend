@@ -67,6 +67,11 @@ BEFORE INSERT OR UPDATE ON app_user
 FOR EACH ROW
 EXECUTE FUNCTION set_audit_fields();
 
+-- Create function to get current organization ID from JWT claims
+CREATE OR REPLACE FUNCTION current_user_id() RETURNS UUID AS $$
+  SELECT nullif(current_setting('request.jwt.claims', true)::json->>'current_user_id', '')::uuid;
+$$ LANGUAGE SQL stable;
+
 -- Enable row level security
 ALTER TABLE app_user ENABLE ROW LEVEL SECURITY;
 
@@ -75,13 +80,7 @@ ALTER TABLE app_user FORCE ROW LEVEL SECURITY;
 
 -- Create policy for organization-based access
 CREATE POLICY app_user_organization_isolation_policy ON app_user
-    USING (
-        --current_setting('jwt.claims.current_organization_id', TRUE) IS NOT NULL AND 
-        organization_id = current_setting('jwt.claims.current_organization_id', TRUE)::UUID
-        )
-    WITH CHECK (
-        organization_id = current_setting('jwt.claims.current_organization_id', true)::UUID
-    );
+  USING (organization_id = current_organization_id());
 
 -- Grant permissions to roles
 GRANT SELECT ON app_user TO simplyserved;
@@ -92,7 +91,7 @@ CREATE OR REPLACE FUNCTION set_organization_id()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Set the organization_id to the current organization ID from JWT claims
-    NEW.organization_id := current_setting('jwt.claims.current_organization_id', TRUE)::UUID;
+    NEW.organization_id := current_organization_id();
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -124,8 +123,9 @@ ALTER TABLE app_user DISABLE ROW LEVEL SECURITY;
 
 -- Drop the table (this will also drop the constraints and indexes)
 DROP TABLE IF EXISTS app_user CASCADE;
-
+DROP POLICY IF EXISTS app_user_organization_isolation_policy ON app_user;
 DROP FUNCTION IF EXISTS set_organization_id;
+DROP FUNCTION IF EXISTS current_user_id;
 
 COMMIT;
 

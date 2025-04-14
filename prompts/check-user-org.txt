@@ -1,0 +1,11 @@
+Add a new endpoint to the token-exchange service /check-user-organization
+
+This endpoint should be similar to the token exchange endpoing. 
+- use the same cors, tls config, and googleAuth token check.
+- using the googleAuth token, extract the user email address and check to see a user exists with this email
+
+if the user exists, return a hash {appUserID: '', organizationId: ''}
+
+if appUser doesn't exist, or not attached to an organization, return null for those fields.
+
+add a new endpoint create-organization

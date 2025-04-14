@@ -52,14 +52,29 @@ async function createOrganization(organizationData, userData) {
     );
     
     const organization = orgResult.rows[0];
+
+    // Log organization details
+    console.log('Created organization:', organization);
     
+    // Set request.jwt.claims postgres local for the current organization to 
+    // the newly created organization
+    await client.query(
+      'SET LOCAL request.jwt.claims = \'' +
+      JSON.stringify({ current_organization_id: organization.id }) + '\''
+    );
+
     // Create user with organization_id and role='owner'
     const userResult = await client.query(
-      'INSERT INTO app_user (first_name, last_name, email, organization_id, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, organization_id, role',
-      [userData.first_name, userData.last_name, userData.email, organization.id, 'owner']
+      'INSERT INTO app_user (email, organization_id, role) VALUES ($1, $2, $3) RETURNING id, email, organization_id, role',
+      [userData.email, organization.id, 'owner']
+      // 'INSERT INTO app_user (first_name, last_name, email, organization_id, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, email, organization_id, role',
+      // [userData.first_name, userData.last_name, userData.email, organization.id, 'owner']
     );
     
     const user = userResult.rows[0];
+
+    // Log user details
+    console.log('Created user:', user);
     
     // Commit transaction
     await client.query('COMMIT');

@@ -72,6 +72,23 @@ CREATE OR REPLACE FUNCTION current_user_id() RETURNS UUID AS $$
   SELECT nullif(current_setting('request.jwt.claims', true)::json->>'current_user_id', '')::uuid;
 $$ LANGUAGE SQL stable;
 
+-- Create function to set a random password hash on user create if password_hash is null
+CREATE OR REPLACE FUNCTION set_random_password_hash() RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.password_hash IS NULL THEN
+        -- Generate a random password hash using pgcrypto
+        NEW.password_hash := crypt(gen_random_uuid()::text, gen_salt('bf'));
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger that runs set_random_password_hash before insert
+CREATE TRIGGER set_random_password_hash
+BEFORE INSERT ON app_user
+FOR EACH ROW
+EXECUTE FUNCTION set_random_password_hash();
+
 -- Enable row level security
 ALTER TABLE app_user ENABLE ROW LEVEL SECURITY;
 
@@ -115,6 +132,8 @@ DROP TRIGGER IF EXISTS set_user_audit_fields ON app_user;
 
 DROP TRIGGER IF EXISTS set_organization_id ON app_user;
 
+DROP TRIGGER IF EXISTS set_random_password_hash ON app_user;
+
 -- Drop policies
 DROP POLICY IF EXISTS app_user_organization_isolation_policy ON app_user;
 
@@ -126,6 +145,8 @@ DROP TABLE IF EXISTS app_user CASCADE;
 DROP POLICY IF EXISTS app_user_organization_isolation_policy ON app_user;
 DROP FUNCTION IF EXISTS set_organization_id;
 DROP FUNCTION IF EXISTS current_user_id;
+DROP FUNCTION IF EXISTS set_random_password_hash;
+DROP FUNCTION IF EXISTS set_audit_fields;
 
 COMMIT;
 

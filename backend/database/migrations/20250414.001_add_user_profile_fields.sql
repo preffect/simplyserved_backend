@@ -21,17 +21,19 @@ ALTER TABLE app_user
     ADD COLUMN last_name VARCHAR(100),
     ADD COLUMN salutation VARCHAR(20),
     ADD COLUMN staff_type staff_type,
-    ADD COLUMN owner_id UUID REFERENCES owner(id),
-    ADD CONSTRAINT fk_owner FOREIGN KEY (owner_id) REFERENCES owner(id);
 
--- Add comment to owner_id column
-COMMENT ON COLUMN app_user.owner_id IS 'This is used to determine the owner of this record';
+-- Add comment to staff_type column
+    COMMENT ON COLUMN app_user.staff_type IS 
+    'Staff type for the user. Possible values: MANAGER, SERVER, HOST, RUNNER';
+-- Add check constraint to ensure staff_type is not null
+ALTER TABLE app_user 
+    ADD CONSTRAINT staff_type_not_null CHECK (staff_type IS NOT NULL);
 
 -- Grant permissions to simplyserved user
-GRANT INSERT (first_name, middle_name, last_name, salutation, staff_type, owner_id) 
+GRANT INSERT (first_name, middle_name, last_name, salutation, staff_type) 
     ON app_user TO simplyserved;
 
-GRANT UPDATE (first_name, middle_name, last_name, salutation, staff_type, owner_id) 
+GRANT UPDATE (first_name, middle_name, last_name, salutation, staff_type) 
     ON app_user TO simplyserved;
 
 COMMIT;
@@ -46,8 +48,7 @@ ALTER TABLE app_user
     DROP COLUMN IF EXISTS middle_name,
     DROP COLUMN IF EXISTS last_name,
     DROP COLUMN IF EXISTS salutation,
-    DROP COLUMN IF EXISTS staff_type,
-    DROP COLUMN IF EXISTS owner_id;
+    DROP COLUMN IF EXISTS staff_type;
 
 -- Drop the enum type if no other tables are using it
 DO $$

@@ -20,11 +20,11 @@ ALTER TABLE app_user
     ADD COLUMN middle_name VARCHAR(100),
     ADD COLUMN last_name VARCHAR(100),
     ADD COLUMN salutation VARCHAR(20),
-    ADD COLUMN staff_type staff_type,
+    ADD COLUMN staff_type staff_type;
 
 -- Add comment to staff_type column
-    COMMENT ON COLUMN app_user.staff_type IS 
-    'Staff type for the user. Possible values: MANAGER, SERVER, HOST, RUNNER';
+COMMENT ON COLUMN app_user.staff_type IS 'Staff type for the user. Possible values: MANAGER, SERVER, HOST, RUNNER';
+
 -- Add check constraint to ensure staff_type is not null
 ALTER TABLE app_user 
     ADD CONSTRAINT staff_type_not_null CHECK (staff_type IS NOT NULL);

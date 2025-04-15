@@ -69,6 +69,10 @@ if [[ "$API_SERVICE" == "postgrest" ]] && need_rebuild "backend_postgrest" "./ba
     REBUILD="$REBUILD postgrest"
 fi
 
+if need_rebuild "backend_nginx" "./backend/nginx/Dockerfile"; then
+    REBUILD="$REBUILD nginx"
+fi
+
 # Rebuild services if needed
 if [ -n "$REBUILD" ]; then
     echo "Rebuilding services: $REBUILD"
@@ -77,7 +81,7 @@ fi
 
 # Start services
 echo "Starting services with $API_SERVICE..."
-docker compose up token-exchange postgres db-migrator $API_SERVICE
+docker compose up token-exchange postgres db-migrator $API_SERVICE nginx
 
 echo "All services are running!"
 echo "PostgreSQL: localhost:5432"
@@ -85,4 +89,5 @@ if [[ "$API_SERVICE" == "postgraphile" ]]; then
     echo "GraphQL API: localhost:5000/graphql"
 else
     echo "REST API: localhost:3000"
+    echo "SSL REST API: https://simplyserved.app:3001"
 fi

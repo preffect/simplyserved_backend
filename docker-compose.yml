@@ -16,6 +16,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  nginx:
+    build:
+      context: ./backend/nginx
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./local/certs/fullchain.pem:/etc/nginx/ssl/fullchain.pem
+      - ./local/certs/privkey.pem:/etc/nginx/ssl/privkey.pem
+    depends_on:
+      - postgrest
   db-migrator:
     build:
       context: ./backend/db-migrator

@@ -25,7 +25,7 @@ CREATE TABLE app_user (
 );
 
 CREATE COMMENT ON TABLE app_user IS 
-    $$This table to store user information for the SimplyServed application and
+    $$This table to store application user information for the SimplyServed application and
     is also used for authentication and authorization purposes.$$
 
 -- Insert system user

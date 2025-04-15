@@ -8,23 +8,26 @@ Use this template when asking an AI to help you create a new database migration.
 Create a PostgreSQL migration script to [DESCRIBE YOUR GOAL].
 
 The migration should:
-1. [SPECIFIC REQUIREMENT 1]
-2. [SPECIFIC REQUIREMENT 2]
-3. [SPECIFIC REQUIREMENT 3]
+1. [Fill in columns and types, and comments on columns]
+- id: UUID, NOT NULL, Primary key, Comment: "This column is x,y,z"
+- owner_id: UUID, foriegn key to owner table, Comment: "This is used to determine the owner of this record"
+2. [Comment on table]
+3. [enums]
+3. [override permissions on fields]
 
 Technical details:
 - Database: PostgreSQL 15
 - Migration naming convention: YYYYMMDD.NNN_descriptive_name.sql
 - Include both "up" migration (changes to apply) and "down" migration (how to roll back)
 - Follow best practices for PostgreSQL schema design
-- Consider performance implications for large datasets
-- Use ROW LEVEL SECURITY based off the organization table and `app.current_tenant` value.
-    - Create a FOR INSERT WITH CHECK policy to ensure tenant ID is set correctly
 - use UUID primary keys
+- Create an on insert trigger calling the existing set_organization_id() function
+- Use ROW LEVEL SECURITY USING (organization_id = current_organization_id())
 - all tables should have audit columns (created_at, modified_at, archived_at, created_by, modified_by, archived_by)
-   - All tables should have `BEFORE INSERT OR UPDATE` triggers which call the set_audit_fields() function.
+   - All tables should have `BEFORE INSERT OR UPDATE` triggers which call the existing set_audit_fields() function.
 - grant SELECT and DELETE on this table to user simplyserved
-- grant INSERT and UPDATE to all rows on this table except the audit columns to user simplyserved
+- grant INSERT to all rows on this table except the audit columns to user simplyserved
+- grant UPDATE to all rows on this table except the audit columns and organization_id to user simplyserved
 - migrations should be placed in ./backend/database/migrations
 
 Migration files should be of the following format:

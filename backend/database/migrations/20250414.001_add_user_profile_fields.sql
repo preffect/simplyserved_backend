@@ -25,10 +25,6 @@ ALTER TABLE app_user
 -- Add comment to staff_type column
 COMMENT ON COLUMN app_user.staff_type IS 'Staff type for the user. Possible values: MANAGER, SERVER, HOST, RUNNER';
 
--- Add check constraint to ensure staff_type is not null
-ALTER TABLE app_user 
-    ADD CONSTRAINT staff_type_not_null CHECK (staff_type IS NOT NULL);
-
 -- Grant permissions to simplyserved user
 GRANT INSERT (first_name, middle_name, last_name, salutation, staff_type) 
     ON app_user TO simplyserved;
